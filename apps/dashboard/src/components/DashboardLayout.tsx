@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
-const THEMES = ["light", "dark", "corporate", "synthwave"];
+const THEMES = ["light", "corporate", "emerald", "winter"];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const routerState = useRouterState();

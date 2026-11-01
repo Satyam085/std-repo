@@ -11,7 +11,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Backend Dashboard" },
+      { title: "Admin Console | Cloudflare Edge Monorepo" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
@@ -25,7 +25,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
-      <body>
+      <body className="min-h-screen bg-base-200/40 text-base-content font-sans antialiased">
         <DashboardLayout>{children}</DashboardLayout>
         <TanStackDevtools
           config={{

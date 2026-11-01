@@ -1,72 +1,133 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight, ShieldCheck, Zap, Database, Layers } from "lucide-react";
 
-export const Route = createFileRoute("/")({ component: App });
+export const Route = createFileRoute("/")({ component: HomePage });
 
-function App() {
+function HomePage() {
+  const features = [
+    {
+      title: "Edge SSR Performance",
+      description:
+        "Rendered directly on Cloudflare Workers close to your users for near-instant First Contentful Paint and optimal SEO indexing.",
+      icon: Zap,
+    },
+    {
+      title: "Hydrated Query Layer",
+      description:
+        "TanStack Query fetches data during SSR and seamlessly hydrates the browser client cache for instant page-to-page navigation.",
+      icon: Layers,
+    },
+    {
+      title: "Stateless Auth & JWT",
+      description:
+        "Better Auth with SQLite D1 adapter and JWT tokens enabling secure authentication across storefront and admin subdomains.",
+      icon: ShieldCheck,
+    },
+    {
+      title: "Cloudflare D1 & R2",
+      description:
+        "Drizzle ORM on serverless SQLite with zero egress fee R2 object storage and KV sliding-window rate limiting.",
+      icon: Database,
+    },
+  ];
+
   return (
-    <main className="page-wrap px-4 pb-8 pt-14">
-      <section className="island-shell rise-in relative overflow-hidden rounded-[2rem] px-6 py-10 sm:px-10 sm:py-14">
-        <div className="pointer-events-none absolute -left-20 -top-24 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(79,184,178,0.32),transparent_66%)]" />
-        <div className="pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(47,106,74,0.18),transparent_66%)]" />
-        <p className="island-kicker mb-3">TanStack Start Base Template</p>
-        <h1 className="display-title mb-5 max-w-3xl text-4xl leading-[1.02] font-bold tracking-tight text-[var(--sea-ink)] sm:text-6xl">
-          Start simple, ship quickly.
+    <main className="page-container py-16 sm:py-24">
+      {/* Hero Section */}
+      <section className="text-center max-w-3xl mx-auto">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-200 bg-white text-xs font-semibold text-neutral-700 shadow-sm mb-6">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          Cloudflare Edge · TanStack Start SSR
+        </div>
+
+        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-neutral-950 leading-[1.1]">
+          Modern edge applications, refined from day one.
         </h1>
-        <p className="mb-8 max-w-2xl text-base text-[var(--sea-ink-soft)] sm:text-lg">
-          This base starter intentionally keeps things light: two routes, clean structure, and the
-          essentials you need to build from scratch.
+
+        <p className="mt-6 text-base sm:text-lg text-neutral-600 leading-relaxed max-w-2xl mx-auto">
+          A high-performance monorepo template pairing a server-rendered TanStack Start storefront
+          with an ultra-lean client dashboard, powered by Cloudflare Workers and Drizzle ORM.
         </p>
-        <div className="flex flex-wrap gap-3">
-          <a
-            href="/about"
-            className="rounded-full border border-[rgba(50,143,151,0.3)] bg-[rgba(79,184,178,0.14)] px-5 py-2.5 text-sm font-semibold text-[var(--lagoon-deep)] no-underline transition hover:-translate-y-0.5 hover:bg-[rgba(79,184,178,0.24)]"
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            to="/products"
+            className="inline-flex items-center gap-2 rounded-xl bg-neutral-950 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800"
           >
-            About This Starter
-          </a>
+            Explore Catalog
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+
+          <Link
+            to="/guide"
+            className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-6 py-3 text-sm font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-50 hover:border-neutral-300"
+          >
+            Architecture Guide
+          </Link>
+
           <a
-            href="https://tanstack.com/router"
+            href="http://localhost:3001"
             target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full border border-[rgba(23,58,64,0.2)] bg-white/50 px-5 py-2.5 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5 hover:border-[rgba(23,58,64,0.35)]"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-5 py-3 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 hover:text-neutral-900"
           >
-            Router Guide
+            Admin Dashboard
+            <span className="text-neutral-400">↗</span>
           </a>
         </div>
       </section>
 
-      <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          ["Type-Safe Routing", "Routes and links stay in sync across every page."],
-          ["Server Functions", "Call server code from your UI without creating API boilerplate."],
-          ["Streaming by Default", "Ship progressively rendered responses for faster experiences."],
-          ["Tailwind Native", "Design quickly with utility-first styling and reusable tokens."],
-        ].map(([title, desc], index) => (
-          <article
-            key={title}
-            className="island-shell feature-card rise-in rounded-2xl p-5"
-            style={{ animationDelay: `${index * 90 + 80}ms` }}
-          >
-            <h2 className="mb-2 text-base font-semibold text-[var(--sea-ink)]">{title}</h2>
-            <p className="m-0 text-sm text-[var(--sea-ink-soft)]">{desc}</p>
-          </article>
-        ))}
+      {/* Feature Grid */}
+      <section className="mt-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {features.map((feature) => {
+          const Icon = feature.icon;
+          return (
+            <div
+              key={feature.title}
+              className="group rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-neutral-300"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 text-neutral-900 group-hover:bg-neutral-950 group-hover:text-white transition">
+                <Icon className="w-5 h-5" />
+              </div>
+              <h3 className="mt-4 text-base font-bold text-neutral-900">{feature.title}</h3>
+              <p className="mt-2 text-xs text-neutral-600 leading-relaxed">{feature.description}</p>
+            </div>
+          );
+        })}
       </section>
 
-      <section className="island-shell mt-8 rounded-2xl p-6">
-        <p className="island-kicker mb-2">Quick Start</p>
-        <ul className="m-0 list-disc space-y-2 pl-5 text-sm text-[var(--sea-ink-soft)]">
-          <li>
-            Edit <code>src/routes/index.tsx</code> to customize the home page.
-          </li>
-          <li>
-            Update <code>src/components/Header.tsx</code> and <code>src/components/Footer.tsx</code>{" "}
-            for brand links.
-          </li>
-          <li>
-            Add routes in <code>src/routes</code> and tweak visual tokens in{" "}
-            <code>src/styles.css</code>.
-          </li>
-        </ul>
+      {/* Edge Architecture Highlight */}
+      <section className="mt-16 rounded-3xl border border-neutral-200/90 bg-white p-8 sm:p-12 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+          <div className="max-w-xl">
+            <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+              Shared Monorepo Architecture
+            </span>
+            <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-neutral-950 tracking-tight">
+              Two distinct runtime strategies, one shared foundation.
+            </h2>
+            <p className="mt-3 text-sm text-neutral-600 leading-relaxed">
+              This storefront utilizes full SSR with TanStack Query hydration for peak SEO and
+              customer performance. The companion dashboard runs in pure SPA mode using native
+              TanStack Router loaders—completely eliminating unnecessary SSR execution costs.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
+            <Link
+              to="/contact"
+              className="inline-flex items-center justify-center rounded-xl border border-neutral-200 bg-neutral-50 px-5 py-2.5 text-xs font-semibold text-neutral-800 transition hover:bg-neutral-100"
+            >
+              Test Contact Form & Rate Limiter
+            </Link>
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-neutral-800"
+            >
+              Customer Authentication
+            </Link>
+          </div>
+        </div>
       </section>
     </main>
   );

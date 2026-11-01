@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useForm } from "@tanstack/react-form";
 import { useState } from "react";
+import { Send, Shield } from "lucide-react";
 
 export const Route = createFileRoute("/contact")({
   component: ContactPage,
@@ -37,7 +38,7 @@ function ContactPage() {
           throw new Error(data.message || data.error || "Failed to submit form");
         }
 
-        setStatus({ type: "success", message: data.message || "Success" });
+        setStatus({ type: "success", message: data.message || "Message sent successfully!" });
         form.reset();
       } catch (err: unknown) {
         setStatus({
@@ -51,24 +52,24 @@ function ContactPage() {
   });
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Contact & Support</h1>
-        <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
-          Powered by <strong>TanStack Form</strong>, verified by Cloudflare KV{" "}
-          <strong>Rate Limiting</strong>, and delivered through <strong>Resend</strong>.
+    <div className="page-container max-w-2xl py-12 sm:py-16">
+      <div className="mb-10 text-center">
+        <h1 className="text-3xl font-extrabold text-neutral-950 tracking-tight">Get in Touch</h1>
+        <p className="mt-2 text-sm text-neutral-600 leading-relaxed max-w-md mx-auto">
+          Built with <strong>TanStack Form</strong>, protected by Cloudflare KV{" "}
+          <strong>sliding-window rate limiting</strong>, and dispatched via <strong>Resend</strong>.
         </p>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+      <div className="bg-white rounded-3xl border border-neutral-200/90 shadow-sm p-8 sm:p-10">
         {status.type === "success" && (
-          <div className="mb-6 p-4 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300 text-sm font-medium">
+          <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium">
             ✓ {status.message}
           </div>
         )}
 
         {status.type === "error" && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 text-sm font-medium">
+          <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
             ⚠ {status.message}
           </div>
         )}
@@ -79,7 +80,7 @@ function ContactPage() {
             e.stopPropagation();
             form.handleSubmit();
           }}
-          className="space-y-6"
+          className="space-y-5"
         >
           <div>
             <form.Field
@@ -92,7 +93,7 @@ function ContactPage() {
                 <div>
                   <label
                     htmlFor={field.name}
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                    className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1.5"
                   >
                     Your Name
                   </label>
@@ -103,10 +104,10 @@ function ContactPage() {
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Jane Doe"
-                    className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3.5 py-2 text-gray-900 dark:text-white dark:bg-gray-700 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 transition"
                   />
                   {field.state.meta.errors ? (
-                    <p className="mt-1 text-xs text-red-500">
+                    <p className="mt-1 text-xs text-rose-600">
                       {field.state.meta.errors.join(", ")}
                     </p>
                   ) : null}
@@ -131,7 +132,7 @@ function ContactPage() {
                 <div>
                   <label
                     htmlFor={field.name}
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                    className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1.5"
                   >
                     Email Address
                   </label>
@@ -143,10 +144,10 @@ function ContactPage() {
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="jane@example.com"
-                    className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3.5 py-2 text-gray-900 dark:text-white dark:bg-gray-700 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 transition"
                   />
                   {field.state.meta.errors ? (
-                    <p className="mt-1 text-xs text-red-500">
+                    <p className="mt-1 text-xs text-rose-600">
                       {field.state.meta.errors.join(", ")}
                     </p>
                   ) : null}
@@ -166,7 +167,7 @@ function ContactPage() {
                 <div>
                   <label
                     htmlFor={field.name}
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                    className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1.5"
                   >
                     Subject
                   </label>
@@ -176,11 +177,11 @@ function ContactPage() {
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder="Question about an order"
-                    className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3.5 py-2 text-gray-900 dark:text-white dark:bg-gray-700 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
+                    placeholder="Question about your services"
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 transition"
                   />
                   {field.state.meta.errors ? (
-                    <p className="mt-1 text-xs text-red-500">
+                    <p className="mt-1 text-xs text-rose-600">
                       {field.state.meta.errors.join(", ")}
                     </p>
                   ) : null}
@@ -205,7 +206,7 @@ function ContactPage() {
                 <div>
                   <label
                     htmlFor={field.name}
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                    className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1.5"
                   >
                     Message
                   </label>
@@ -216,11 +217,11 @@ function ContactPage() {
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder="How can we help you today?"
-                    className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3.5 py-2 text-gray-900 dark:text-white dark:bg-gray-700 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
+                    placeholder="How can we assist you?"
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 transition resize-none"
                   />
                   {field.state.meta.errors ? (
-                    <p className="mt-1 text-xs text-red-500">
+                    <p className="mt-1 text-xs text-rose-600">
                       {field.state.meta.errors.join(", ")}
                     </p>
                   ) : null}
@@ -229,13 +230,17 @@ function ContactPage() {
             </form.Field>
           </div>
 
-          <div className="flex items-center justify-between pt-2">
-            <span className="text-xs text-gray-500">Rate limited to 5 requests per min</span>
+          <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
+            <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 font-medium">
+              <Shield className="w-3.5 h-3.5 text-neutral-400" />
+              <span>Edge rate limited (5 req / min)</span>
+            </div>
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-medium rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-xs font-semibold rounded-xl transition shadow-sm cursor-pointer"
             >
+              <Send className="w-3.5 h-3.5" />
               {submitting ? "Sending..." : "Send Message"}
             </button>
           </div>

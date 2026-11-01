@@ -92,13 +92,14 @@ function ProductsPage() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-          Storefront Catalog
+    <div className="page-container py-12 sm:py-16">
+      <div className="mb-10 max-w-2xl">
+        <h1 className="text-3xl font-extrabold text-neutral-950 tracking-tight">
+          Catalog & Products
         </h1>
-        <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
-          Populated with SSR hydration and synced via <strong>TanStack Query</strong> from
+        <p className="mt-2 text-sm text-neutral-600 leading-relaxed">
+          Pre-rendered via TanStack Start SSR and automatically kept in sync with client-side cache
+          using <strong className="text-neutral-900 font-semibold">TanStack Query</strong> and
           Cloudflare D1.
         </p>
       </div>
@@ -107,11 +108,11 @@ function ProductsPage() {
         {productList?.map((item) => (
           <div
             key={item.id}
-            className="group relative bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col justify-between"
+            className="group relative bg-white rounded-2xl shadow-sm hover:shadow-md transition duration-200 overflow-hidden border border-neutral-200/80 flex flex-col justify-between"
           >
             <div>
               {item.imageUrl && (
-                <div className="aspect-h-1 aspect-w-1 w-full overflow-hidden bg-gray-100 dark:bg-gray-700 h-48">
+                <div className="aspect-h-1 aspect-w-1 w-full overflow-hidden bg-neutral-100 h-48">
                   <img
                     src={item.imageUrl}
                     alt={item.name}
@@ -119,26 +120,24 @@ function ProductsPage() {
                   />
                 </div>
               )}
-              <div className="p-4">
-                <span className="text-xs font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+              <div className="p-5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-600">
                   {item.category}
                 </span>
-                <h3 className="mt-1 text-lg font-bold text-gray-900 dark:text-white">
-                  {item.name}
-                </h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                <h3 className="mt-1 text-base font-bold text-neutral-900">{item.name}</h3>
+                <p className="mt-1.5 text-xs text-neutral-600 line-clamp-2 leading-relaxed">
                   {item.description}
                 </p>
               </div>
             </div>
 
-            <div className="p-4 pt-0 flex items-center justify-between border-t border-gray-100 dark:border-gray-700/60 mt-4">
-              <span className="text-xl font-black text-gray-900 dark:text-white">
+            <div className="p-5 pt-0 flex items-center justify-between border-t border-neutral-100 mt-4">
+              <span className="text-lg font-extrabold text-neutral-950">
                 ${item.price.toFixed(2)}
               </span>
               <button
                 type="button"
-                className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold rounded-lg transition shadow-sm cursor-pointer"
                 onClick={() => alert(`Added ${item.name} to cart!`)}
               >
                 Add to Cart
