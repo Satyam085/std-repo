@@ -108,21 +108,21 @@ pnpm dev:dashboard   # Dashboard at http://localhost:3001
 
 ## 🛠️ CLI Commands Cheat Sheet
 
-| Task                    | Command                 | Description                                                       |
-| :---------------------- | :---------------------- | :---------------------------------------------------------------- |
-| **Start Dev**           | `pnpm dev`              | Runs storefront (port 3000) and dashboard (port 3001) in parallel |
-| **Format & Lint**       | `pnpm check`            | Runs Vite+ (`vp check`) across all apps & packages                |
-| **Auto-Fix Code**       | `pnpm check:fix`        | Fixes formatting (Oxfmt) & lint rules (Oxlint)                    |
-| **Staged Git Check**    | `vp staged`             | Automatically executed by Git pre-commit hook                     |
-| **Type Check**          | `pnpm typecheck`        | Typechecks all packages via Turborepo                             |
-| **Generate Migrations** | `pnpm db:generate`      | Creates SQL migration files in `packages/db` via Drizzle Kit      |
-| **Sync Cloudflare IDs** | `pnpm cf:sync`          | Syncs D1, KV, R2 IDs from `.env` to both `wrangler.jsonc` files   |
-| **Apply DB Locally**    | `pnpm db:migrate:local` | Applies migrations to local D1 instance                           |
-| **Apply DB to Prod**    | `pnpm db:migrate:prod`  | Applies migrations to remote Cloudflare D1                        |
-| **Drizzle Studio**      | `pnpm db:studio`        | Launches GUI browser for database tables                          |
-| **Build Apps**          | `pnpm build`            | Builds production bundles for storefront and dashboard            |
-| **Deploy Storefront**   | `pnpm deploy:web`       | Deploys `apps/web` to Cloudflare Workers                          |
-| **Deploy Dashboard**    | `pnpm deploy:dashboard` | Deploys `apps/dashboard` to Cloudflare Workers                    |
+| Task                    | Command                 | Description                                                                      |
+| :---------------------- | :---------------------- | :------------------------------------------------------------------------------- |
+| **Start Dev**           | `pnpm dev`              | Runs storefront (port 3000) and dashboard (port 3001) in parallel                |
+| **Format & Lint**       | `pnpm check`            | Runs Vite+ (`vp check`) across all apps & packages                               |
+| **Auto-Fix Code**       | `pnpm check:fix`        | Fixes formatting (Oxfmt) & lint rules (Oxlint)                                   |
+| **Staged Git Check**    | `vp staged`             | Automatically executed by Git pre-commit hook                                    |
+| **Type Check**          | `pnpm typecheck`        | Typechecks all packages via Turborepo                                            |
+| **Generate Migrations** | `pnpm db:generate`      | Creates SQL migration files in `packages/db` via Drizzle Kit                     |
+| **Sync Cloudflare IDs** | `pnpm cf:sync`          | Syncs D1, KV, R2 IDs from `.env` to all `wrangler.jsonc` files (apps & packages) |
+| **Apply DB Locally**    | `pnpm db:migrate:local` | Applies migrations to local D1 instance                                          |
+| **Apply DB to Prod**    | `pnpm db:migrate:prod`  | Applies migrations to remote Cloudflare D1                                       |
+| **Drizzle Studio**      | `pnpm db:studio`        | Launches GUI browser for database tables                                         |
+| **Build Apps**          | `pnpm build`            | Builds production bundles for storefront and dashboard                           |
+| **Deploy Storefront**   | `pnpm deploy:web`       | Deploys `apps/web` to Cloudflare Workers                                         |
+| **Deploy Dashboard**    | `pnpm deploy:dashboard` | Deploys `apps/dashboard` to Cloudflare Workers                                   |
 
 ---
 

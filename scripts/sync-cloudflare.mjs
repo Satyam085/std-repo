@@ -31,6 +31,7 @@ if (!d1Id && !kvId) {
 const targetFiles = [
   path.join(rootDir, "apps", "web", "wrangler.jsonc"),
   path.join(rootDir, "apps", "dashboard", "wrangler.jsonc"),
+  path.join(rootDir, "packages", "db", "wrangler.jsonc"),
 ];
 
 for (const filePath of targetFiles) {
@@ -54,4 +55,6 @@ for (const filePath of targetFiles) {
   console.log(`✅ Synced Cloudflare IDs to ${path.relative(rootDir, filePath)}`);
 }
 
-console.log("🎉 Cloudflare Wrangler bindings are synchronized across apps/web and apps/dashboard.");
+console.log(
+  "🎉 Cloudflare Wrangler bindings are synchronized across apps/web, apps/dashboard, and packages/db.",
+);

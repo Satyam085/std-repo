@@ -21,8 +21,8 @@
     "db:migrate:local": "pnpm --filter=@repo/db db:migrate:local",
     "db:migrate:prod": "pnpm --filter=@repo/db db:migrate:prod",
     "db:studio": "pnpm --filter=@repo/db db:studio",
-    "deploy:web": "pnpm --filter=@repo/web deploy",
-    "deploy:dashboard": "pnpm --filter=@repo/dashboard deploy"
+    "deploy:web": "pnpm --filter=@repo/web run deploy",
+    "deploy:dashboard": "pnpm --filter=@repo/dashboard run deploy"
   },
   "devDependencies": {
     "turbo": "^2.11.10",

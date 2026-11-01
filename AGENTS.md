@@ -129,20 +129,20 @@ The repository contains two distinct frontend applications sharing six modular w
 
 AI agents must execute the following commands when making changes:
 
-| Action                     | Command                     | Notes                                               |
-| :------------------------- | :-------------------------- | :-------------------------------------------------- |
-| **Install Dependencies**   | `pnpm install`              | Uses workspace lockfile                             |
-| **Run Dev Servers**        | `pnpm dev`                  | Storefront (port 3000), Dashboard (port 3001)       |
-| **Lint & Format Check**    | `pnpm check`                | Runs `vp check` across all packages                 |
-| **Auto-Fix Code Quality**  | `pnpm check:fix`            | Runs `vp check --fix` (Oxfmt + Oxlint)              |
-| **Staged Git Check**       | `vp staged`                 | Automatically called by Git pre-commit hook         |
-| **Enable Git Hooks**       | `vp hooks enable`           | Configures `.vite-hooks` dispatcher                 |
-| **Type Check**             | `pnpm typecheck`            | Runs `tsc --noEmit` across all 8 workspace packages |
-| **Build Apps**             | `pnpm build`                | Compiles production bundles via Turborepo           |
-| **Generate DB Migrations** | `pnpm db:generate`          | Creates SQL migrations in `packages/db`             |
-| **Sync Cloudflare IDs**    | `pnpm cf:sync`              | Syncs D1, KV, R2 IDs from `.env` to both wranglers  |
-| **Apply DB Locally**       | `pnpm db:migrate:local`     | Applies migrations to Miniflare local D1            |
-| **Approve Native Builds**  | `pnpm approve-builds --all` | Run if pnpm v12 blocks esbuild or workerd           |
+| Action                     | Command                     | Notes                                                                    |
+| :------------------------- | :-------------------------- | :----------------------------------------------------------------------- |
+| **Install Dependencies**   | `pnpm install`              | Uses workspace lockfile                                                  |
+| **Run Dev Servers**        | `pnpm dev`                  | Storefront (port 3000), Dashboard (port 3001)                            |
+| **Lint & Format Check**    | `pnpm check`                | Runs `vp check` across all packages                                      |
+| **Auto-Fix Code Quality**  | `pnpm check:fix`            | Runs `vp check --fix` (Oxfmt + Oxlint)                                   |
+| **Staged Git Check**       | `vp staged`                 | Automatically called by Git pre-commit hook                              |
+| **Enable Git Hooks**       | `vp hooks enable`           | Configures `.vite-hooks` dispatcher                                      |
+| **Type Check**             | `pnpm typecheck`            | Runs `tsc --noEmit` across all 8 workspace packages                      |
+| **Build Apps**             | `pnpm build`                | Compiles production bundles via Turborepo                                |
+| **Generate DB Migrations** | `pnpm db:generate`          | Creates SQL migrations in `packages/db`                                  |
+| **Sync Cloudflare IDs**    | `pnpm cf:sync`              | Syncs D1, KV, R2 IDs from `.env` across web, dashboard, and db wranglers |
+| **Apply DB Locally**       | `pnpm db:migrate:local`     | Applies migrations to Miniflare local D1                                 |
+| **Approve Native Builds**  | `pnpm approve-builds --all` | Run if pnpm v12 blocks esbuild or workerd                                |
 
 ---
 
