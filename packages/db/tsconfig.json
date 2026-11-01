@@ -1,0 +1,9 @@
+{
+  "extends": "@repo/tsconfig/cloudflare.json",
+  "compilerOptions": {
+    "moduleResolution": "Bundler",
+    "rootDir": "./src",
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*"]
+}

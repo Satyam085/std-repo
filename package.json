@@ -1,0 +1,31 @@
+{
+  "name": "template-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:web": "turbo --filter=@repo/web dev",
+    "dev:dashboard": "turbo --filter=@repo/dashboard dev",
+    "build": "turbo build",
+    "lint": "vp lint",
+    "lint:fix": "vp lint --fix",
+    "format": "vp fmt",
+    "format:fix": "vp fmt --fix",
+    "check": "vp check",
+    "check:fix": "vp check --fix",
+    "typecheck": "turbo typecheck",
+    "clean": "turbo clean && rm -rf node_modules",
+    "db:generate": "pnpm --filter=@repo/db db:generate",
+    "db:migrate:local": "pnpm --filter=@repo/db db:migrate:local",
+    "db:migrate:prod": "pnpm --filter=@repo/db db:migrate:prod",
+    "db:studio": "pnpm --filter=@repo/db db:studio",
+    "deploy:web": "pnpm --filter=@repo/web deploy",
+    "deploy:dashboard": "pnpm --filter=@repo/dashboard deploy"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.10",
+    "typescript": "^5.7.3",
+    "vite-plus": "^1.4.0"
+  },
+  "packageManager": "pnpm@12.16.1"
+}

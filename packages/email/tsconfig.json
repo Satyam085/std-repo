@@ -1,0 +1,9 @@
+{
+  "extends": "@repo/tsconfig/base.json",
+  "compilerOptions": {
+    "moduleResolution": "Bundler",
+    "rootDir": "./src",
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*"]
+}
