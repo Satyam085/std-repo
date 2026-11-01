@@ -26,6 +26,9 @@ export default function Header() {
           >
             Products
           </Link>
+          <Link to="/guide" className="nav-link" activeProps={{ className: "nav-link is-active" }}>
+            Guide
+          </Link>
           <Link
             to="/contact"
             className="nav-link"

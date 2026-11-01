@@ -7,6 +7,7 @@ import {
   ExternalLink,
   Bell,
   Palette,
+  BookOpen,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -33,6 +34,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { label: "Overview", to: "/", icon: LayoutDashboard },
     { label: "User Directory", to: "/users", icon: Users, badge: "D1" },
     { label: "R2 File Storage", to: "/files", icon: HardDrive, badge: "R2" },
+    { label: "Architecture Guide", to: "/guide", icon: BookOpen, badge: "Docs" },
     { label: "System Settings", to: "/settings", icon: Settings },
   ];
 

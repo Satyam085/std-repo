@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as FilesRouteImport } from './routes/files'
+import { Route as GuideRouteImport } from './routes/guide'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as UsersRouteImport } from './routes/users'
@@ -31,6 +32,11 @@ const AboutRoute = AboutRouteImport.update({
 const FilesRoute = FilesRouteImport.update({
   id: '/files',
   path: '/files',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuideRoute = GuideRouteImport.update({
+  id: '/guide',
+  path: '/guide',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/files': typeof FilesRoute
+  '/guide': typeof GuideRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/files': typeof FilesRoute
+  '/guide': typeof GuideRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/files': typeof FilesRoute
+  '/guide': typeof GuideRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/files'
+    | '/guide'
     | '/login'
     | '/settings'
     | '/users'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/files'
+    | '/guide'
     | '/login'
     | '/settings'
     | '/users'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/files'
+    | '/guide'
     | '/login'
     | '/settings'
     | '/users'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   FilesRoute: typeof FilesRoute
+  GuideRoute: typeof GuideRoute
   LoginRoute: typeof LoginRoute
   SettingsRoute: typeof SettingsRoute
   UsersRoute: typeof UsersRoute
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/files'
       fullPath: '/files'
       preLoaderRoute: typeof FilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guide': {
+      id: '/guide'
+      path: '/guide'
+      fullPath: '/guide'
+      preLoaderRoute: typeof GuideRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   FilesRoute: FilesRoute,
+  GuideRoute: GuideRoute,
   LoginRoute: LoginRoute,
   SettingsRoute: SettingsRoute,
   UsersRoute: UsersRoute,

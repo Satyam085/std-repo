@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as GuideRouteImport } from './routes/guide'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as RegisterRouteImport } from './routes/register'
@@ -34,6 +35,11 @@ const AboutRoute = AboutRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuideRoute = GuideRouteImport.update({
+  id: '/guide',
+  path: '/guide',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
+  '/guide': typeof GuideRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
   '/register': typeof RegisterRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
+  '/guide': typeof GuideRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
   '/register': typeof RegisterRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
+  '/guide': typeof GuideRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
   '/register': typeof RegisterRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/contact'
+    | '/guide'
     | '/login'
     | '/products'
     | '/register'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/contact'
+    | '/guide'
     | '/login'
     | '/products'
     | '/register'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/contact'
+    | '/guide'
     | '/login'
     | '/products'
     | '/register'
@@ -163,6 +175,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   ContactRoute: typeof ContactRoute
+  GuideRoute: typeof GuideRoute
   LoginRoute: typeof LoginRoute
   ProductsRoute: typeof ProductsRoute
   RegisterRoute: typeof RegisterRoute
@@ -194,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guide': {
+      id: '/guide'
+      path: '/guide'
+      fullPath: '/guide'
+      preLoaderRoute: typeof GuideRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -259,6 +279,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ContactRoute: ContactRoute,
+  GuideRoute: GuideRoute,
   LoginRoute: LoginRoute,
   ProductsRoute: ProductsRoute,
   RegisterRoute: RegisterRoute,
