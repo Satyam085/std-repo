@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { HardDrive, Upload, Copy, Check, FileText, Image, FileArchive } from "lucide-react";
+import { HardDrive, Upload, Copy, Check, FileText, Image, FileArchive, Globe } from "lucide-react";
 import { useState } from "react";
 
 interface FileItem {
@@ -73,27 +73,41 @@ function FilesPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight">Cloudflare R2 Object Storage</h1>
-          <p className="text-sm text-base-content/70 mt-1">
-            Zero-egress file storage attached via Worker binding <code>env.STORAGE</code>.
+          <h1 className="text-xl font-bold tracking-tight">Cloudflare R2 Storage</h1>
+          <p className="text-xs text-base-content/70 mt-1">
+            Zero-egress object storage connected via Worker binding <code>env.STORAGE</code>.
           </p>
         </div>
         <button
-          className="btn btn-primary btn-sm gap-2"
-          onClick={() => alert("Direct R2 streaming upload configured via API.")}
+          type="button"
+          className="btn btn-neutral btn-sm gap-2 text-xs font-semibold shadow-sm cursor-pointer"
+          onClick={() => alert("Direct streaming upload to R2 via presigned Worker URL.")}
         >
           <Upload className="w-4 h-4" />
-          Upload to R2
+          Upload Object
         </button>
       </div>
 
-      {/* Bucket Info */}
-      <div className="alert bg-base-100 border border-base-300 shadow-sm">
-        <HardDrive className="w-5 h-5 text-accent" />
-        <div>
-          <h3 className="font-bold text-sm">Binding Status: Active</h3>
-          <div className="text-xs text-base-content/70">
-            Bucket: <code>prod-storage</code> • Region: Automated (Global Edge) • Egress Fee: $0.00
+      {/* Bucket Info Banner */}
+      <div className="card bg-base-100 border border-base-300 shadow-sm p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-base-200 text-base-content rounded-lg">
+              <HardDrive className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-semibold text-base-content">prod-storage</span>
+              <span className="text-base-content/50 ml-2">Bucket attached to Workers</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 text-base-content/70">
+            <span className="flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-success" />
+              Global Replication
+            </span>
+            <span className="badge badge-success badge-outline badge-sm text-[10px] font-bold">
+              0.00 Egress Fee
+            </span>
           </div>
         </div>
       </div>
@@ -102,58 +116,71 @@ function FilesPage() {
       <div className="card bg-base-100 border border-base-300 shadow-sm">
         <div className="card-body p-6">
           <div className="overflow-x-auto">
-            <table className="table table-zebra w-full text-sm">
+            <table className="table table-sm w-full text-xs" aria-label="Stored objects list">
               <thead>
-                <tr>
-                  <th>File Name</th>
-                  <th>Content Type</th>
-                  <th>File Size</th>
-                  <th>Uploaded Date</th>
-                  <th className="text-right">Public Link</th>
+                <tr className="border-b border-base-200 text-base-content/50 uppercase text-[10px] tracking-wider">
+                  <th scope="col" className="py-2.5">
+                    File Name
+                  </th>
+                  <th scope="col" className="py-2.5">
+                    Content Type
+                  </th>
+                  <th scope="col" className="py-2.5">
+                    Size
+                  </th>
+                  <th scope="col" className="py-2.5">
+                    Uploaded
+                  </th>
+                  <th scope="col" className="py-2.5 text-right">
+                    Direct Link
+                  </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-base-200">
                 {fileList.map((file) => {
                   const isImg = file.contentType.startsWith("image/");
                   const isPdf = file.contentType.includes("pdf");
                   return (
-                    <tr key={file.id}>
-                      <td>
-                        <div className="flex items-center gap-2.5 font-medium">
+                    <tr key={file.id} className="hover:bg-base-200/50 transition-colors">
+                      <td className="py-3">
+                        <div className="flex items-center gap-2.5 font-medium text-base-content">
                           {isImg ? (
-                            <Image className="w-4 h-4 text-primary" />
+                            <Image className="w-4 h-4 text-info" />
                           ) : isPdf ? (
                             <FileText className="w-4 h-4 text-warning" />
                           ) : (
-                            <FileArchive className="w-4 h-4 text-secondary" />
+                            <FileArchive className="w-4 h-4 text-accent" />
                           )}
                           <span>{file.filename}</span>
                         </div>
                       </td>
-                      <td>
-                        <span className="badge badge-sm badge-ghost text-xs">
+                      <td className="py-3">
+                        <span className="badge badge-sm badge-ghost text-[10px] font-medium">
                           {file.contentType}
                         </span>
                       </td>
-                      <td className="text-base-content/80 text-xs font-mono">
+                      <td className="text-base-content/80 text-xs tabular-nums py-3">
                         {formatBytes(file.size)}
                       </td>
-                      <td className="text-base-content/60 text-xs">{file.uploadedAt}</td>
-                      <td className="text-right">
+                      <td className="text-base-content/60 text-xs tabular-nums py-3">
+                        {file.uploadedAt}
+                      </td>
+                      <td className="text-right py-3">
                         <button
                           type="button"
                           onClick={() => copyUrl(file.key)}
-                          className="btn btn-ghost btn-xs gap-1"
+                          className="btn btn-ghost btn-xs gap-1.5 text-xs"
+                          aria-label={`Copy link for ${file.filename}`}
                         >
                           {copiedKey === file.key ? (
                             <>
                               <Check className="w-3.5 h-3.5 text-success" />
-                              <span className="text-success text-xs">Copied</span>
+                              <span className="text-success font-medium">Copied</span>
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span className="text-xs">Copy URL</span>
+                              <Copy className="w-3.5 h-3.5 text-base-content/60" />
+                              <span className="text-base-content/75">Copy URL</span>
                             </>
                           )}
                         </button>

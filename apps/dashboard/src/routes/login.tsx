@@ -33,21 +33,21 @@ function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-[75vh] flex items-center justify-center">
-      <div className="card w-full max-w-md bg-base-100 border border-base-300 shadow-xl">
+    <div className="min-h-[75vh] flex items-center justify-center p-4">
+      <div className="card w-full max-w-md bg-base-100 border border-base-300 shadow-sm">
         <div className="card-body p-8">
-          <div className="flex flex-col items-center text-center mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3">
-              <KeyRound className="w-6 h-6" />
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="w-10 h-10 rounded-xl bg-base-200 text-base-content flex items-center justify-center mb-3">
+              <KeyRound className="w-5 h-5" />
             </div>
-            <h2 className="card-title text-xl font-black">Admin Access</h2>
+            <h1 className="text-xl font-bold tracking-tight">Admin Console Access</h1>
             <p className="text-xs text-base-content/60 mt-1">
-              Secured with Better Auth + JWT Plugin on Cloudflare Workers
+              Secured with Better Auth + JWT on Cloudflare Workers
             </p>
           </div>
 
           {error && (
-            <div className="alert alert-error text-xs p-3 mb-4">
+            <div className="alert alert-error text-xs p-3 mb-4 rounded-xl border border-error/20">
               <ShieldAlert className="w-4 h-4" />
               <span>{error}</span>
             </div>
@@ -55,40 +55,46 @@ function AdminLoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="form-control">
-              <label className="label">
+              <label className="label py-1" htmlFor="admin-email">
                 <span className="label-text font-semibold text-xs">Email Address</span>
               </label>
               <input
+                id="admin-email"
                 type="email"
                 required
                 placeholder="admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="input input-bordered input-sm w-full"
+                className="input input-bordered input-sm w-full text-xs"
               />
             </div>
 
             <div className="form-control">
-              <label className="label">
+              <label className="label py-1" htmlFor="admin-password">
                 <span className="label-text font-semibold text-xs">Password</span>
               </label>
               <input
+                id="admin-password"
                 type="password"
                 required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input input-bordered input-sm w-full"
+                className="input input-bordered input-sm w-full text-xs"
               />
             </div>
 
-            <button type="submit" disabled={loading} className="btn btn-primary btn-sm w-full mt-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-neutral btn-sm w-full mt-2 text-xs font-semibold cursor-pointer shadow-sm"
+            >
               {loading ? "Authenticating..." : "Sign in to Console"}
             </button>
           </form>
 
-          <div className="text-center text-xs text-base-content/50 mt-6 pt-4 border-t border-base-200">
-            Cloudflare D1 & KV Session Authentication
+          <div className="text-center text-[11px] text-base-content/50 mt-6 pt-4 border-t border-base-200">
+            Protected by Cloudflare KV Sliding Window Limit
           </div>
         </div>
       </div>
