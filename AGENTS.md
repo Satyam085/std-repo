@@ -140,6 +140,7 @@ AI agents must execute the following commands when making changes:
 | **Type Check**             | `pnpm typecheck`            | Runs `tsc --noEmit` across all 8 workspace packages |
 | **Build Apps**             | `pnpm build`                | Compiles production bundles via Turborepo           |
 | **Generate DB Migrations** | `pnpm db:generate`          | Creates SQL migrations in `packages/db`             |
+| **Sync Cloudflare IDs**    | `pnpm cf:sync`              | Syncs D1, KV, R2 IDs from `.env` to both wranglers  |
 | **Apply DB Locally**       | `pnpm db:migrate:local`     | Applies migrations to Miniflare local D1            |
 | **Approve Native Builds**  | `pnpm approve-builds --all` | Run if pnpm v12 blocks esbuild or workerd           |
 

@@ -116,6 +116,7 @@ pnpm dev:dashboard   # Dashboard at http://localhost:3001
 | **Staged Git Check**    | `vp staged`             | Automatically executed by Git pre-commit hook                     |
 | **Type Check**          | `pnpm typecheck`        | Typechecks all packages via Turborepo                             |
 | **Generate Migrations** | `pnpm db:generate`      | Creates SQL migration files in `packages/db` via Drizzle Kit      |
+| **Sync Cloudflare IDs** | `pnpm cf:sync`          | Syncs D1, KV, R2 IDs from `.env` to both `wrangler.jsonc` files   |
 | **Apply DB Locally**    | `pnpm db:migrate:local` | Applies migrations to local D1 instance                           |
 | **Apply DB to Prod**    | `pnpm db:migrate:prod`  | Applies migrations to remote Cloudflare D1                        |
 | **Drizzle Studio**      | `pnpm db:studio`        | Launches GUI browser for database tables                          |
@@ -144,33 +145,23 @@ pnpm dlx wrangler r2 bucket create prod-storage
 pnpm dlx wrangler kv namespace create KV
 ```
 
-### 2. Update `wrangler.jsonc` in Both Apps
+### 2. Configure Cloudflare IDs Once & Sync
 
-Paste the generated IDs into `apps/web/wrangler.jsonc` and `apps/dashboard/wrangler.jsonc`:
+Instead of copying IDs into both `wrangler.jsonc` files manually, define them once in your root `.env`:
 
-```jsonc
-{
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "prod-db",
-      "database_id": "<YOUR_D1_DATABASE_ID>",
-    },
-  ],
-  "r2_buckets": [
-    {
-      "binding": "STORAGE",
-      "bucket_name": "prod-storage",
-    },
-  ],
-  "kv_namespaces": [
-    {
-      "binding": "KV",
-      "id": "<YOUR_KV_NAMESPACE_ID>",
-    },
-  ],
-}
+```env
+D1_DATABASE_ID=<YOUR_D1_DATABASE_ID>
+KV_NAMESPACE_ID=<YOUR_KV_NAMESPACE_ID>
+R2_BUCKET_NAME=prod-storage
 ```
+
+Then run the sync script to update both `apps/web/wrangler.jsonc` and `apps/dashboard/wrangler.jsonc` simultaneously:
+
+```bash
+pnpm cf:sync
+```
+
+_(For local development with `pnpm dev`, you do not even need real IDs—Miniflare automatically emulates all three locally with the default zeroed placeholder IDs!)_
 
 ### 3. Set Production Secrets
 

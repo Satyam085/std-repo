@@ -16,6 +16,7 @@
     "check:fix": "vp check --fix",
     "typecheck": "turbo typecheck",
     "clean": "turbo clean && rm -rf node_modules",
+    "cf:sync": "node scripts/sync-cloudflare.mjs",
     "db:generate": "pnpm --filter=@repo/db db:generate",
     "db:migrate:local": "pnpm --filter=@repo/db db:migrate:local",
     "db:migrate:prod": "pnpm --filter=@repo/db db:migrate:prod",
