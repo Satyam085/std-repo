@@ -135,6 +135,8 @@ AI agents must execute the following commands when making changes:
 | **Run Dev Servers**        | `pnpm dev`                  | Storefront (port 3000), Dashboard (port 3001)       |
 | **Lint & Format Check**    | `pnpm check`                | Runs `vp check` across all packages                 |
 | **Auto-Fix Code Quality**  | `pnpm check:fix`            | Runs `vp check --fix` (Oxfmt + Oxlint)              |
+| **Staged Git Check**       | `vp staged`                 | Automatically called by Git pre-commit hook         |
+| **Enable Git Hooks**       | `vp hooks enable`           | Configures `.vite-hooks` dispatcher                 |
 | **Type Check**             | `pnpm typecheck`            | Runs `tsc --noEmit` across all 8 workspace packages |
 | **Build Apps**             | `pnpm build`                | Compiles production bundles via Turborepo           |
 | **Generate DB Migrations** | `pnpm db:generate`          | Creates SQL migrations in `packages/db`             |

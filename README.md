@@ -113,6 +113,7 @@ pnpm dev:dashboard   # Dashboard at http://localhost:3001
 | **Start Dev**           | `pnpm dev`              | Runs storefront (port 3000) and dashboard (port 3001) in parallel |
 | **Format & Lint**       | `pnpm check`            | Runs Vite+ (`vp check`) across all apps & packages                |
 | **Auto-Fix Code**       | `pnpm check:fix`        | Fixes formatting (Oxfmt) & lint rules (Oxlint)                    |
+| **Staged Git Check**    | `vp staged`             | Automatically executed by Git pre-commit hook                     |
 | **Type Check**          | `pnpm typecheck`        | Typechecks all packages via Turborepo                             |
 | **Generate Migrations** | `pnpm db:generate`      | Creates SQL migration files in `packages/db` via Drizzle Kit      |
 | **Apply DB Locally**    | `pnpm db:migrate:local` | Applies migrations to local D1 instance                           |
