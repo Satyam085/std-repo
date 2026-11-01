@@ -18,7 +18,7 @@ Powered by **pnpm workspaces**, **Turborepo**, **Vite+** (VoidZero), **TanStack 
   - **Pre-built Routes**: Product catalog with SSR query hydration, Contact form with sliding-window rate limiting & Resend email, Better Auth Sign In & Sign Up screens.
 - **Backend Admin Dashboard (`apps/dashboard`)**:
   - **TanStack Start in SPA Mode**: Pure client-rendered navigation (`defaultSsr: false`) with zero SSR overhead.
-  - **DaisyUI 5 + Tailwind CSS v4**: Themeable admin UI with light & elegant multi-theme switcher (`light`, `corporate`, `emerald`, `winter`).
+  - **DaisyUI 5 + Tailwind CSS v4**: Minimalist admin UI styled with a clean, light, and accessible theme (`light`).
   - **Native Data Loaders & RPC Functions**: 100% lean architecture using TanStack Router loaders and server functions without extra query library bloat.
   - **Pre-built Views**: Collapsible DaisyUI Drawer layout, System Overview with live telemetry stat cards, Cloudflare D1 User Directory, Cloudflare R2 File Storage explorer, and Settings form.
 
@@ -257,9 +257,9 @@ _If `RESEND_API_KEY` is not provided locally, emails are automatically logged to
 
 The dashboard uses DaisyUI 5 via `@plugin "daisyui"` in `apps/dashboard/src/styles.css`:
 
-- Switch themes interactively from the palette button in the top navigation bar.
-- Available themes: `light` (default), `corporate`, `emerald`, `winter`.
-- Saved in `localStorage` and persisted across sessions.
+- Pre-configured with a clean, light, accessible theme (`light --default`).
+- Zero client-side theming runtime scripts or flashes.
+- Styled with semantic utility classes (`card`, `table`, `badge`, `btn`, `drawer`).
 
 ---
 

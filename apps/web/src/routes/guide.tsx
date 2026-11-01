@@ -192,7 +192,7 @@ function GuidePage() {
                 <td className="py-3 font-medium text-neutral-900">Styling Engine</td>
                 <td className="py-3 text-neutral-600">Tailwind CSS v4 (light & elegant theme)</td>
                 <td className="py-3 text-neutral-600">
-                  DaisyUI 5 + Tailwind CSS v4 (light theme switcher)
+                  DaisyUI 5 + Tailwind CSS v4 (clean light theme)
                 </td>
               </tr>
               <tr>

@@ -29,7 +29,7 @@ function DashboardGuidePage() {
       color: "badge-accent",
       icon: Layers,
       content:
-        'DaisyUI 5 runs directly as a pure CSS plugin for Tailwind CSS v4 (@plugin "daisyui"). It provides pre-built semantic components (drawers, stat cards, tables, badges, modals, avatars) and instant multi-theme switching (light, corporate, emerald, winter) with zero client JS runtime overhead.',
+        'DaisyUI 5 runs directly as a pure CSS plugin for Tailwind CSS v4 (@plugin "daisyui"). It provides pre-built semantic components (drawers, stat cards, tables, badges, modals, avatars) styled with a clean, light, accessible theme and zero client JS runtime overhead.',
     },
     {
       title: "Why Cloudflare D1 + R2 + KV?",

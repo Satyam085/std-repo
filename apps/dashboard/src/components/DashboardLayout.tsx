@@ -6,31 +6,14 @@ import {
   Settings,
   ExternalLink,
   Bell,
-  Palette,
   BookOpen,
   ChevronRight,
   Search,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-
-const THEMES = ["light", "corporate", "emerald", "winter"];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
-  const [currentTheme, setCurrentTheme] = useState("light");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("dashboard-theme") || "light";
-    setCurrentTheme(saved);
-    document.documentElement.setAttribute("data-theme", saved);
-  }, []);
-
-  const changeTheme = (theme: string) => {
-    setCurrentTheme(theme);
-    localStorage.setItem("dashboard-theme", theme);
-    document.documentElement.setAttribute("data-theme", theme);
-  };
 
   const navItems = [
     { label: "Overview", to: "/", icon: LayoutDashboard },
@@ -98,40 +81,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Search className="w-3.5 h-3.5" />
               <span>Press / to search</span>
               <kbd className="kbd kbd-xs bg-base-100">/</kbd>
-            </div>
-
-            {/* Theme Picker */}
-            <div className="dropdown dropdown-end">
-              <div
-                tabIndex={0}
-                role="button"
-                className="btn btn-ghost btn-circle btn-sm"
-                aria-label="Select theme"
-              >
-                <Palette className="w-4 h-4 text-base-content/70" />
-              </div>
-              <ul
-                tabIndex={0}
-                className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-44 z-50 border border-base-300 text-xs"
-              >
-                <li className="menu-title text-[11px] font-bold uppercase tracking-wider">
-                  Theme Palette
-                </li>
-                {THEMES.map((t) => (
-                  <li key={t}>
-                    <button
-                      type="button"
-                      onClick={() => changeTheme(t)}
-                      className={`capitalize flex items-center justify-between ${
-                        currentTheme === t ? "active font-bold" : ""
-                      }`}
-                    >
-                      <span>{t}</span>
-                      {currentTheme === t && <span className="text-[10px]">●</span>}
-                    </button>
-                  </li>
-                ))}
-              </ul>
             </div>
 
             {/* Notifications */}

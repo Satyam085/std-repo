@@ -2,11 +2,7 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 @plugin "daisyui" {
-  themes:
-    light --default,
-    corporate,
-    emerald,
-    winter;
+  themes: light --default;
 }
 
 @theme {

@@ -4,8 +4,6 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import DashboardLayout from "../components/DashboardLayout";
 import appCss from "../styles.css?url";
 
-const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getItem('dashboard-theme')||'light';document.documentElement.setAttribute('data-theme',stored);}catch(e){}})();`;
-
 export const Route = createRootRoute({
   head: () => ({
     meta: [
@@ -22,10 +20,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" data-theme="light">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
-      <body className="min-h-screen bg-base-200/40 text-base-content font-sans antialiased">
+      <body className="min-h-screen bg-base-200/50 text-base-content font-sans antialiased">
         <DashboardLayout>{children}</DashboardLayout>
         <TanStackDevtools
           config={{
