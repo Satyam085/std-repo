@@ -7,4 +7,4 @@ export function createDb(d1: D1Database) {
 
 export type Database = ReturnType<typeof createDb>;
 export * from "./schema";
-export { eq, desc, asc, and, or, sql, like } from "drizzle-orm";
+export { eq, desc, asc, and, or, sql, like, count, gt } from "drizzle-orm";

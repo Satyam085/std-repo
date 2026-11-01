@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-01T18:15:22.951253+00:00",
+  "title": "Design System: Admin Console (Manual Page)",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#5c5c5c",
+          "#8a8a8a",
+          "#b9b9b4",
+          "#e2e2de",
+          "#f5f5f3",
+          "#ffffff"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "#000000",
+          "#111111",
+          "#2b2b2b",
+          "#454545",
+          "#5c5c5c",
+          "#8a8a8a",
+          "#b9b9b4",
+          "#e2e2de"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Reserved Accent",
+        "tonalRamp": [
+          "#04255a",
+          "#063a8c",
+          "#0b57d0",
+          "#3c7be0",
+          "#6d9de8",
+          "#9ebff0",
+          "#cfdff7",
+          "#eef4fd"
+        ]
+      },
+      "error": {
+        "role": "error",
+        "displayName": "Failure Red",
+        "tonalRamp": [
+          "#4f0d0c",
+          "#7a1513",
+          "#c5221f",
+          "#d6504d",
+          "#e27d7b",
+          "#edaaa8",
+          "#f6d4d3",
+          "#fcefef"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "page-name": {
+        "displayName": "Page name",
+        "purpose": "The H1 inside NAME, lowercase like a command."
+      },
+      "section-head": {
+        "displayName": "Section head",
+        "purpose": "NAME, SYNOPSIS, STATUS and the rest, set in the head column."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Tables, leaders, navigation, controls, synopsis."
+      },
+      "prose": {
+        "displayName": "Prose",
+        "purpose": "Summaries and explanations."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "dur",
+        "value": "160ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The single transition constant; 0ms under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Control",
+      "kind": "button",
+      "refersTo": "control",
+      "description": "Bracketed text control; inverts on hover.",
+      "html": "<button class=\"ds-ctl\">refresh</button>",
+      "css": ".ds-ctl{display:inline-flex;align-items:center;gap:.5ch;min-height:2rem;padding:0 .5rem;font:500 .8125rem 'JetBrains Mono',ui-monospace,monospace;color:#111;background:transparent;border:0;border-radius:0;cursor:pointer;transition:background-color 160ms cubic-bezier(.16,1,.3,1),color 160ms cubic-bezier(.16,1,.3,1)}.ds-ctl::before{content:'['}.ds-ctl::after{content:']'}.ds-ctl:hover{background:#111;color:#fff}.ds-ctl:focus-visible{outline:2px solid #0b57d0;outline-offset:2px}"
+    },
+    {
+      "name": "Primary control",
+      "kind": "button",
+      "refersTo": "control-primary",
+      "description": "The page's main action, in the reserved accent.",
+      "html": "<button class=\"ds-ctl-primary\">save settings</button>",
+      "css": ".ds-ctl-primary{display:inline-flex;align-items:center;gap:.5ch;min-height:2rem;padding:0 .5rem;font:500 .8125rem 'JetBrains Mono',ui-monospace,monospace;color:#0b57d0;background:transparent;border:0;border-radius:0;cursor:pointer;transition:background-color 160ms cubic-bezier(.16,1,.3,1),color 160ms cubic-bezier(.16,1,.3,1)}.ds-ctl-primary::before{content:'['}.ds-ctl-primary::after{content:']'}.ds-ctl-primary:hover{background:#0b57d0;color:#fff}.ds-ctl-primary:focus-visible{outline:2px solid #0b57d0;outline-offset:2px}"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Mono input with a hairline border; accent on focus.",
+      "html": "<input class=\"ds-field\" placeholder=\"filter by name or email\">",
+      "css": ".ds-field{width:100%;min-height:2.25rem;padding:0 .625rem;font:400 .8125rem 'JetBrains Mono',ui-monospace,monospace;color:#111;background:#fff;border:1px solid #e2e2de;border-radius:0;transition:border-color 160ms cubic-bezier(.16,1,.3,1)}.ds-field:hover{border-color:#5c5c5c}.ds-field:focus-visible{border-color:#0b57d0;outline:1px solid #0b57d0;outline-offset:0}"
+    },
+    {
+      "name": "Index",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Section index with man-section numbers.",
+      "html": "<nav class=\"ds-index\"><a class=\"ds-on\" href=\"#\">overview<span>(1)</span></a><a href=\"#\">users<span>(5)</span></a><a href=\"#\">settings<span>(8)</span></a></nav>",
+      "css": ".ds-index{display:flex;flex-direction:column;font:400 .8125rem 'JetBrains Mono',ui-monospace,monospace}.ds-index a{padding:.375rem .75rem;color:#111;text-decoration:none;transition:background-color 160ms}.ds-index a span{color:#5c5c5c}.ds-index a:hover{background:#f5f5f3}.ds-index a.ds-on,.ds-index a.ds-on span{color:#0b57d0;font-weight:700}"
+    },
+    {
+      "name": "Leader row",
+      "kind": "custom",
+      "description": "label ........ value, figures right-aligned on a dotted leader.",
+      "html": "<div class=\"ds-leader\"><span><i class=\"ds-dot\"></i> <b>DB</b></span><span class=\"ds-dots\"></span><span>3 users · <em>16 ms</em></span></div>",
+      "css": ".ds-leader{display:flex;align-items:baseline;gap:.5rem;font:400 .8125rem/1.75 'JetBrains Mono',ui-monospace,monospace;color:#111}.ds-dots{flex:1;border-bottom:1px dotted rgba(17,17,17,.35);transform:translateY(-4px)}.ds-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#0b57d0}.ds-leader em{font-style:normal;color:#5c5c5c}"
+    },
+    {
+      "name": "Section",
+      "kind": "custom",
+      "description": "Man-page section: uppercase head column beside its body.",
+      "html": "<section class=\"ds-sec\"><h2>Status</h2><p>Every binding answered.</p></section>",
+      "css": ".ds-sec{display:grid;grid-template-columns:9rem 1fr;gap:2rem;padding:1.75rem 0;border-top:1px solid #e2e2de}.ds-sec h2{margin:0;font:700 .8125rem 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase}.ds-sec p{margin:0;font:400 1rem 'Public Sans',system-ui,sans-serif;color:#5c5c5c}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The man page for your running product",
+    "overview": "The console reads like a page from a Unix manual. Each route is one page with a NAME, an optional SYNOPSIS that states how the data gets there, and then its own sections (STATUS, EVENTS, ACCOUNTS, OBJECTS). A running header and footer frame every page, and the index lists sections by man-section number (users(5), settings(8)). It deliberately avoids the stock SaaS admin look: no gray sidebar slab, no KPI card row, no rounded cards. The owner scans, acts, and leaves.",
+    "keyCharacteristics": [
+      "White paper, near-black ink, and one reserved accent.",
+      "Monospace for data, labels, controls, and section heads. Grotesk for sentences.",
+      "Hairline rules instead of containers, and zero radius everywhere.",
+      "Text controls in brackets ([ refresh ]) that invert on hover, like a terminal selection.",
+      "Figures right-aligned against the margin on dotted leaders."
+    ],
+    "rules": [
+      {
+        "name": "The Reserved Ink Rule",
+        "body": "The accent marks only the current page, links and primary controls, focus, and live state (healthy status dots). Roles, badges, and decoration stay ink.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Inks Rule",
+        "body": "Hierarchy comes from weight, case, and rules, not from gray fills or extra hues. Red is the only other color, and only for failure.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do set every new route as a ManPage with NAME, a truthful SYNOPSIS (loader → server function → binding), then its own Sections.",
+      "Do put real binding data on screen, and say plainly when something is empty.",
+      "Do keep page actions as bracketed controls on the NAME row.",
+      "Do run every motion on the single constant --dur (160ms, expo ease-out). It drops to 0 under reduced motion."
+    ],
+    "donts": [
+      "Don't use cards, gray panels, KPI tiles, or rounded corners.",
+      "Don't spend the accent on decoration, roles, or badges.",
+      "Don't add icon tiles or glyph icons. Words and section heads carry meaning here.",
+      "Don't use eyebrow or kicker labels above headings. Section heads sit beside their content, not above titles."
+    ]
+  }
+}

@@ -1,211 +1,187 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { useForm } from "@tanstack/react-form";
+import { env } from "cloudflare:workers";
 import { useState } from "react";
-import { Save, Check, Sliders, Shield } from "lucide-react";
+import { z } from "zod";
+import { adminOnly } from "#/lib/auth";
+import { ManPage, Section } from "#/components/Man";
+
+// Read by apps/web/src/routes/api/contact.ts. Keep the key and field names in sync.
+const KEY = "settings:contact";
+const schema = z.object({
+  supportEmail: z.string().email("Enter a valid email address."),
+  contactLimit: z.number().int().min(1, "At least 1.").max(1000, "At most 1000."),
+  contactWindowSeconds: z.number().int().min(60, "KV needs at least 60 seconds.").max(86400),
+});
+type Settings = z.infer<typeof schema>;
+const DEFAULTS: Settings = {
+  supportEmail: "admin@example.com",
+  contactLimit: 5,
+  contactWindowSeconds: 60,
+};
+
+export const getSettings = createServerFn({ method: "GET" })
+  .middleware([adminOnly])
+  .handler(async () => ({ ...DEFAULTS, ...(await env.KV.get<Partial<Settings>>(KEY, "json")) }));
+
+export const saveSettings = createServerFn({ method: "POST" })
+  .middleware([adminOnly])
+  .validator(schema)
+  .handler(async ({ data }) => {
+    await env.KV.put(KEY, JSON.stringify(data));
+  });
 
 export const Route = createFileRoute("/settings")({
+  loader: () => getSettings(),
   component: SettingsPage,
 });
 
 function SettingsPage() {
-  const [saved, setSaved] = useState(false);
+  const initial = Route.useLoaderData();
+  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
 
   const form = useForm({
-    defaultValues: {
-      siteName: "Production Edge Monorepo",
-      supportEmail: "support@example.com",
-      rateLimitWindow: 60,
-      rateLimitMax: 10,
-      enablePublicSignup: true,
-      logLevel: "info",
-    },
-    onSubmit: async () => {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+    defaultValues: initial,
+    validators: { onChange: schema },
+    onSubmit: async ({ value }) => {
+      try {
+        await saveSettings({ data: value });
+        setStatus({ ok: true, text: "Saved to KV. The storefront uses it on the next request." });
+      } catch (err) {
+        setStatus({ ok: false, text: err instanceof Error ? err.message : "Could not save." });
+      }
     },
   });
 
   return (
-    <div className="max-w-4xl space-y-6">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight">System Settings</h1>
-        <p className="text-xs text-base-content/70 mt-1">
-          Configure runtime environment variables, Cloudflare KV rate limiting thresholds, and
-          security policies.
-        </p>
-      </div>
-
-      {saved && (
-        <div className="alert alert-success shadow-sm text-xs py-3 rounded-xl border border-success/30">
-          <Check className="w-4 h-4" />
-          <span className="font-semibold">Settings preferences saved successfully!</span>
-        </div>
-      )}
-
-      <div className="card bg-base-100 border border-base-300 shadow-sm">
-        <div className="card-body p-6">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              form.handleSubmit();
-            }}
-            className="space-y-6"
-          >
-            {/* General Section */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Sliders className="w-4 h-4 text-base-content/70" />
-                <h2 className="text-sm font-bold uppercase tracking-wider text-base-content/80">
-                  General Properties
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <form.Field name="siteName">
-                    {(field) => (
-                      <div className="form-control">
-                        <label className="label py-1" htmlFor="settings-sitename">
-                          <span className="label-text text-xs font-semibold">
-                            Application Title
-                          </span>
-                        </label>
-                        <input
-                          id="settings-sitename"
-                          type="text"
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          className="input input-bordered w-full input-sm text-xs"
-                        />
-                      </div>
-                    )}
-                  </form.Field>
-                </div>
-
-                <div>
-                  <form.Field name="supportEmail">
-                    {(field) => (
-                      <div className="form-control">
-                        <label className="label py-1" htmlFor="settings-supportemail">
-                          <span className="label-text text-xs font-semibold">
-                            Support Contact Email
-                          </span>
-                        </label>
-                        <input
-                          id="settings-supportemail"
-                          type="email"
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          className="input input-bordered w-full input-sm text-xs"
-                        />
-                      </div>
-                    )}
-                  </form.Field>
-                </div>
-              </div>
-            </div>
-
-            <div className="divider my-2"></div>
-
-            {/* Edge Rate Limiting Section */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Shield className="w-4 h-4 text-base-content/70" />
-                <h2 className="text-sm font-bold uppercase tracking-wider text-base-content/80">
-                  Cloudflare KV Sliding Window Limiter
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <form.Field name="rateLimitMax">
-                    {(field) => (
-                      <div className="form-control">
-                        <label className="label py-1" htmlFor="settings-ratelimitmax">
-                          <span className="label-text text-xs font-semibold">
-                            Max Requests per Window
-                          </span>
-                        </label>
-                        <input
-                          id="settings-ratelimitmax"
-                          type="number"
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(Number(e.target.value))}
-                          className="input input-bordered w-full input-sm text-xs tabular-nums"
-                        />
-                        <span className="text-[11px] text-base-content/60 mt-1">
-                          Requests allowed before HTTP 429 Retry-After is triggered.
-                        </span>
-                      </div>
-                    )}
-                  </form.Field>
-                </div>
-
-                <div>
-                  <form.Field name="rateLimitWindow">
-                    {(field) => (
-                      <div className="form-control">
-                        <label className="label py-1" htmlFor="settings-ratelimitwindow">
-                          <span className="label-text text-xs font-semibold">
-                            Window TTL (Seconds)
-                          </span>
-                        </label>
-                        <input
-                          id="settings-ratelimitwindow"
-                          type="number"
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(Number(e.target.value))}
-                          className="input input-bordered w-full input-sm text-xs tabular-nums"
-                        />
-                        <span className="text-[11px] text-base-content/60 mt-1">
-                          Sliding window interval tracked in Cloudflare KV.
-                        </span>
-                      </div>
-                    )}
-                  </form.Field>
-                </div>
-              </div>
-            </div>
-
-            <div className="divider my-2"></div>
-
-            {/* Public Registration Switch */}
-            <div className="flex items-center justify-between py-1">
-              <div>
-                <div className="font-semibold text-xs text-base-content">
-                  Public Customer Registration
-                </div>
-                <div className="text-[11px] text-base-content/60">
-                  Allow visitors to self-register via the storefront auth screens.
-                </div>
-              </div>
-              <form.Field name="enablePublicSignup">
-                {(field) => (
+    <ManPage
+      name="settings"
+      summary="Runtime settings for the storefront contact form, stored in KV and read on every submission."
+      synopsis={<>loader → getSettings() → KV.get("{KEY}") · saveSettings() → KV.put</>}
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+        noValidate
+        className="divide-y divide-base-300"
+      >
+        <Section title="Contact" id="contact">
+          <div className="grid gap-5 max-w-2xl">
+            <form.Field name="supportEmail">
+              {(field) => (
+                <Row
+                  id="supportEmail"
+                  label="support email"
+                  hint="Where contact form submissions are emailed."
+                  error={field.state.meta.errors[0]?.message}
+                >
                   <input
-                    type="checkbox"
-                    checked={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.checked)}
-                    className="toggle toggle-neutral toggle-sm"
-                    aria-label="Toggle public customer registration"
+                    id="supportEmail"
+                    type="email"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    className="field"
                   />
-                )}
-              </form.Field>
-            </div>
+                </Row>
+              )}
+            </form.Field>
+          </div>
+        </Section>
 
-            <div className="flex justify-end pt-4 border-t border-base-200">
+        <Section title="Rate limit" id="rate-limit">
+          <div className="grid gap-5 max-w-2xl">
+            <form.Field name="contactLimit">
+              {(field) => (
+                <Row
+                  id="contactLimit"
+                  label="max submissions"
+                  hint="Per IP per window. Past this, the form answers HTTP 429 with Retry-After."
+                  error={field.state.meta.errors[0]?.message}
+                >
+                  <input
+                    id="contactLimit"
+                    type="number"
+                    inputMode="numeric"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.valueAsNumber)}
+                    className="field max-w-[12ch] tabular-nums"
+                  />
+                </Row>
+              )}
+            </form.Field>
+            <form.Field name="contactWindowSeconds">
+              {(field) => (
+                <Row
+                  id="contactWindowSeconds"
+                  label="window (s)"
+                  hint="Length of each counting window in seconds."
+                  error={field.state.meta.errors[0]?.message}
+                >
+                  <input
+                    id="contactWindowSeconds"
+                    type="number"
+                    inputMode="numeric"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.valueAsNumber)}
+                    className="field max-w-[12ch] tabular-nums"
+                  />
+                </Row>
+              )}
+            </form.Field>
+          </div>
+        </Section>
+
+        <div className="md:pl-[11rem] pt-6 flex flex-wrap items-center gap-3">
+          <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting, s.isDirty] as const}>
+            {([canSubmit, isSubmitting, isDirty]) => (
               <button
                 type="submit"
-                className="btn btn-neutral btn-sm gap-2 text-xs font-semibold shadow-sm cursor-pointer"
+                className="ctl ctl-primary -ml-2"
+                disabled={!canSubmit || isSubmitting || !isDirty}
               >
-                <Save className="w-4 h-4" />
-                Save Preferences
+                {isSubmitting ? "saving…" : "save settings"}
               </button>
-            </div>
-          </form>
+            )}
+          </form.Subscribe>
+          <span
+            role="status"
+            className={`font-mono text-xs ${status?.ok === false ? "text-error" : "text-muted"}`}
+          >
+            {status?.text}
+          </span>
         </div>
+      </form>
+    </ManPage>
+  );
+}
+
+function Row({
+  id,
+  label,
+  hint,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  hint: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid gap-1.5 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-4 sm:items-start">
+      <label htmlFor={id} className="font-mono text-[13px] font-bold sm:pt-2">
+        {label}
+      </label>
+      <div className="grid gap-1">
+        {children}
+        <p className={`text-xs ${error ? "text-error" : "text-muted"}`}>{error ?? hint}</p>
       </div>
     </div>
   );

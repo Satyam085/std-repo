@@ -1,284 +1,209 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import {
-  Users,
-  HardDrive,
-  Zap,
-  Database,
-  RefreshCw,
-  CheckCircle2,
-  ShieldAlert,
-} from "lucide-react";
+import { auditLogs, count, createDb, desc, eq, gt, session, user } from "@repo/db";
+import { env } from "cloudflare:workers";
 import { useState } from "react";
+import { adminOnly } from "#/lib/auth";
+import {
+  Empty,
+  Leader,
+  ManPage,
+  Section,
+  StatusDot,
+  formatBytes,
+  stamp,
+  tableClass,
+  tdClass,
+  thClass,
+  wideOnly,
+} from "#/components/Man";
 
-export const getDashboardStatsServer = createServerFn({ method: "GET" }).handler(async () => {
-  // In production, queries D1 database, R2 metadata, and KV
-  return {
-    totalUsers: 1420,
-    userGrowth: "+12.5%",
-    activeSessions: 389,
-    storageUsedMB: 284.6,
-    edgeLatencyMs: 14.2,
-    p95LatencyMs: 18.7,
-    kvHitRate: "99.4%",
-    recentAudits: [
-      {
-        id: "1",
-        action: "User registered",
-        email: "alex@example.com",
-        time: "5m ago",
-        status: "success",
-      },
-      {
-        id: "2",
-        action: "R2 File uploaded (avatar.png)",
-        email: "sarah@example.com",
-        time: "18m ago",
-        status: "success",
-      },
-      {
-        id: "3",
-        action: "JWT Token refreshed",
-        email: "michael@example.com",
-        time: "32m ago",
-        status: "info",
-      },
-      {
-        id: "4",
-        action: "Rate limit blocked IP (5 attempts)",
-        email: "unknown",
-        time: "1h ago",
-        status: "warning",
-      },
-    ],
-  };
-});
+// Time one binding round-trip; failures become data, not a crashed page.
+async function probe<T>(run: () => Promise<T>) {
+  const start = Date.now();
+  try {
+    const value = await run();
+    return { ok: true as const, ms: Date.now() - start, value };
+  } catch (err) {
+    return {
+      ok: false as const,
+      ms: Date.now() - start,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+export const getOverview = createServerFn({ method: "GET" })
+  .middleware([adminOnly])
+  .handler(async () => {
+    const db = createDb(env.DB);
+    const [d1, r2, kv, events] = await Promise.all([
+      probe(async () => {
+        const [[users], [sessions]] = await Promise.all([
+          db.select({ n: count() }).from(user),
+          db.select({ n: count() }).from(session).where(gt(session.expiresAt, new Date())),
+        ]);
+        return `${users?.n ?? 0} users · ${sessions?.n ?? 0} live sessions`;
+      }),
+      probe(async () => {
+        const list = await env.STORAGE.list({ limit: 1000 });
+        const bytes = list.objects.reduce((sum, o) => sum + o.size, 0);
+        return `${list.objects.length}${list.truncated ? "+" : ""} objects · ${formatBytes(bytes)}`;
+      }),
+      probe(async () => {
+        const list = await env.KV.list({ limit: 1000 });
+        return `${list.keys.length}${list.list_complete ? "" : "+"} keys`;
+      }),
+      probe(() =>
+        db
+          .select({
+            id: auditLogs.id,
+            action: auditLogs.action,
+            ip: auditLogs.ip,
+            createdAt: auditLogs.createdAt,
+            email: user.email,
+          })
+          .from(auditLogs)
+          .leftJoin(user, eq(auditLogs.actorId, user.id))
+          .orderBy(desc(auditLogs.createdAt))
+          .limit(15),
+      ),
+    ]);
+
+    return {
+      bindings: [
+        { name: "DB", kind: "D1 database", ...d1 },
+        { name: "STORAGE", kind: "R2 bucket", ...r2 },
+        { name: "KV", kind: "KV namespace", ...kv },
+      ],
+      events,
+      checkedAt: new Date().toISOString(),
+    };
+  });
 
 export const Route = createFileRoute("/")({
-  loader: async () => {
-    return await getDashboardStatsServer();
-  },
-  component: DashboardOverview,
+  loader: () => getOverview(),
+  component: Overview,
 });
 
-function DashboardOverview() {
-  const stats = Route.useLoaderData();
-  const [filter, setFilter] = useState<"all" | "success" | "warning" | "info">("all");
+function Overview() {
+  const { bindings, events, checkedAt } = Route.useLoaderData();
+  const { user: admin } = Route.useRouteContext();
+  const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const down = bindings.filter((b) => !b.ok).length;
 
-  const handleRefresh = () => {
+  const refresh = async () => {
     setRefreshing(true);
-    setTimeout(() => {
-      window.location.reload();
-    }, 400);
+    await router.invalidate();
+    setRefreshing(false);
   };
 
-  const filteredAudits = stats.recentAudits.filter(
-    (item) => filter === "all" || item.status === filter,
-  );
-
   return (
-    <div className="space-y-6">
-      {/* Top Banner with Service Topology */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-base-100 p-6 rounded-2xl border border-base-300 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-bold tracking-tight">System Telemetry</h1>
-            <span className="badge badge-success badge-sm text-[10px] font-bold">LIVE</span>
-          </div>
-          <p className="text-xs text-base-content/70">
-            Real-time status for Cloudflare Workers, D1 SQLite, R2 Storage, and KV rate limiter.
-          </p>
-        </div>
+    <ManPage
+      name="overview"
+      summary={
+        down === 0
+          ? "Every binding answered. Recent sign-ups and sign-ins are listed below."
+          : `${down} of ${bindings.length} bindings failed to answer. Details below.`
+      }
+      synopsis={<>loader → getOverview() → probes D1, R2, KV · checked {stamp(checkedAt)} UTC</>}
+      actions={
+        <button type="button" className="ctl ctl-primary" onClick={refresh} disabled={refreshing}>
+          {refreshing ? "refreshing…" : "refresh"}
+        </button>
+      }
+    >
+      <Section title="Status" id="status">
+        <ul className="max-w-3xl">
+          {bindings.map((b) => (
+            <li key={b.name}>
+              <Leader
+                label={
+                  <span className="flex items-center gap-2.5">
+                    <StatusDot ok={b.ok} />
+                    <span className="font-bold w-[8ch]">{b.name}</span>
+                    <span className="text-muted hidden sm:inline">{b.kind}</span>
+                  </span>
+                }
+              >
+                {b.ok ? (
+                  <>
+                    {b.value} <span className="text-muted whitespace-nowrap">· {b.ms} ms</span>
+                  </>
+                ) : (
+                  <span className="text-error">error · {b.error}</span>
+                )}
+              </Leader>
+            </li>
+          ))}
+          <li>
+            <Leader
+              label={
+                <span className="flex items-center gap-2.5">
+                  <StatusDot ok />
+                  <span className="font-bold w-[8ch]">AUTH</span>
+                  <span className="text-muted hidden sm:inline">Better Auth</span>
+                </span>
+              }
+            >
+              {admin?.email} <span className="text-muted whitespace-nowrap">· jwt cache 5 min</span>
+            </Leader>
+          </li>
+        </ul>
+      </Section>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            disabled={refreshing}
-            className="btn btn-neutral btn-sm gap-1.5 text-xs font-semibold cursor-pointer shadow-sm"
-            onClick={handleRefresh}
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            {refreshing ? "Refreshing..." : "Refresh Status"}
-          </button>
-        </div>
-      </div>
-
-      {/* Operational Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1: Edge D1 Latency */}
-        <div className="card bg-base-100 border border-base-300 shadow-sm">
-          <div className="card-body p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-base-content/60 uppercase tracking-wider">
-                Edge D1 Latency
-              </span>
-              <div className="p-2 bg-base-200 text-base-content rounded-lg">
-                <Database className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold tabular-nums mt-2">
-              {stats.edgeLatencyMs}{" "}
-              <span className="text-sm font-normal text-base-content/60">ms</span>
-            </div>
-            <div className="flex items-center justify-between text-xs text-base-content/60 mt-1 pt-2 border-t border-base-200">
-              <span>p95 Execution</span>
-              <span className="font-semibold text-base-content tabular-nums">
-                {stats.p95LatencyMs} ms
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Metric 2: Active Sessions */}
-        <div className="card bg-base-100 border border-base-300 shadow-sm">
-          <div className="card-body p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-base-content/60 uppercase tracking-wider">
-                Active JWT Tokens
-              </span>
-              <div className="p-2 bg-base-200 text-base-content rounded-lg">
-                <Zap className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold tabular-nums mt-2">
-              {stats.activeSessions.toLocaleString()}
-            </div>
-            <div className="flex items-center justify-between text-xs text-base-content/60 mt-1 pt-2 border-t border-base-200">
-              <span>Better Auth Mode</span>
-              <span className="font-semibold text-base-content">Stateless JWT</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Metric 3: R2 Storage */}
-        <div className="card bg-base-100 border border-base-300 shadow-sm">
-          <div className="card-body p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-base-content/60 uppercase tracking-wider">
-                Cloudflare R2
-              </span>
-              <div className="p-2 bg-base-200 text-base-content rounded-lg">
-                <HardDrive className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold tabular-nums mt-2">
-              {stats.storageUsedMB}{" "}
-              <span className="text-sm font-normal text-base-content/60">MB</span>
-            </div>
-            <div className="flex items-center justify-between text-xs text-base-content/60 mt-1 pt-2 border-t border-base-200">
-              <span>Egress Fees</span>
-              <span className="font-semibold text-success">$0.00 (Zero Egress)</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Metric 4: Total Users */}
-        <div className="card bg-base-100 border border-base-300 shadow-sm">
-          <div className="card-body p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-base-content/60 uppercase tracking-wider">
-                Total Accounts
-              </span>
-              <div className="p-2 bg-base-200 text-base-content rounded-lg">
-                <Users className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold tabular-nums mt-2">
-              {stats.totalUsers.toLocaleString()}
-            </div>
-            <div className="flex items-center justify-between text-xs text-base-content/60 mt-1 pt-2 border-t border-base-200">
-              <span>Month over Month</span>
-              <span className="font-semibold text-success tabular-nums">{stats.userGrowth}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Activity Log Section */}
-      <div className="card bg-base-100 border border-base-300 shadow-sm">
-        <div className="card-body p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-            <div>
-              <h2 className="text-base font-bold">Audit & Security Event Stream</h2>
-              <p className="text-xs text-base-content/60">
-                Live events authenticated and checked against KV sliding-window limits
-              </p>
-            </div>
-
-            {/* Filter Tabs */}
-            <div className="join join-horizontal">
-              {(["all", "success", "warning", "info"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setFilter(tab)}
-                  className={`join-item btn btn-xs capitalize ${
-                    filter === tab ? "btn-neutral font-bold" : "btn-ghost text-base-content/60"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-          </div>
-
+      <Section title="Events" id="events">
+        {!events.ok ? (
+          <p className="font-mono text-[13px] text-error">audit_logs unreadable · {events.error}</p>
+        ) : events.value.length === 0 ? (
+          <Empty>
+            No events yet. Sign-ups and sign-ins are written to audit_logs as they happen.
+          </Empty>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="table table-sm w-full text-xs" aria-label="Recent audit events">
+            <table className={tableClass}>
               <thead>
-                <tr className="border-b border-base-200 text-base-content/50 uppercase text-[10px] tracking-wider">
-                  <th scope="col" className="py-2.5">
+                <tr>
+                  <th scope="col" className={`${thClass} ${wideOnly}`}>
+                    Time (UTC)
+                  </th>
+                  <th scope="col" className={thClass}>
                     Event
                   </th>
-                  <th scope="col" className="py-2.5">
+                  <th scope="col" className={`${thClass} ${wideOnly}`}>
                     Actor
                   </th>
-                  <th scope="col" className="py-2.5">
-                    Status
-                  </th>
-                  <th scope="col" className="py-2.5 text-right">
-                    Timestamp
+                  <th scope="col" className={`${thClass} ${wideOnly} text-right`}>
+                    IP
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-base-200">
-                {filteredAudits.length > 0 ? (
-                  filteredAudits.map((item) => (
-                    <tr key={item.id} className="hover:bg-base-200/50 transition-colors">
-                      <td className="font-medium text-base-content py-3">{item.action}</td>
-                      <td className="text-base-content/70 py-3">{item.email}</td>
-                      <td className="py-3">
-                        <span
-                          className={`badge badge-sm font-semibold text-[10px] gap-1 ${
-                            item.status === "success"
-                              ? "badge-success badge-outline"
-                              : item.status === "warning"
-                                ? "badge-warning badge-outline"
-                                : "badge-info badge-outline"
-                          }`}
-                        >
-                          {item.status === "success" && <CheckCircle2 className="w-3 h-3" />}
-                          {item.status === "warning" && <ShieldAlert className="w-3 h-3" />}
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="text-base-content/50 tabular-nums text-right py-3">
-                        {item.time}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="text-center py-8 text-base-content/50">
-                      No audit events match the selected filter.
+              <tbody className="divide-y divide-base-300">
+                {events.value.map((e) => (
+                  <tr key={e.id}>
+                    <td className={`${tdClass} ${wideOnly} text-muted whitespace-nowrap`}>
+                      {stamp(e.createdAt)}
+                    </td>
+                    <td className={tdClass}>
+                      {e.action}
+                      <span className="block sm:hidden text-muted [overflow-wrap:anywhere]">
+                        {e.email ?? "deleted user"} · {stamp(e.createdAt)}
+                      </span>
+                    </td>
+                    <td className={`${tdClass} ${wideOnly} [overflow-wrap:anywhere]`}>
+                      {e.email ?? "deleted user"}
+                    </td>
+                    <td className={`${tdClass} ${wideOnly} text-right text-muted pr-0`}>
+                      {e.ip || "n/a"}
                     </td>
                   </tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
-    </div>
+        )}
+      </Section>
+    </ManPage>
   );
 }

@@ -50,3 +50,14 @@ export const verification = sqliteTable("verification", {
   createdAt: integer("created_at", { mode: "timestamp" }),
   updatedAt: integer("updated_at", { mode: "timestamp" }),
 });
+
+// Signing keys for the Better Auth JWT plugin (private keys are encrypted with BETTER_AUTH_SECRET).
+export const jwks = sqliteTable("jwks", {
+  id: text("id").primaryKey(),
+  publicKey: text("public_key").notNull(),
+  privateKey: text("private_key").notNull(),
+  alg: text("alg"),
+  crv: text("crv"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+});

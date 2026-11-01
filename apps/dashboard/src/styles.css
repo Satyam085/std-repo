@@ -1,27 +1,61 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Public+Sans:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
-@plugin "@tailwindcss/typography";
 @plugin "daisyui" {
   themes: light --default;
 }
 
+/* The single light theme. Rebrand: change --color-primary (the one accent). */
+@plugin "daisyui/theme" {
+  name: "light";
+  default: true;
+  color-scheme: light;
+  --color-base-100: #ffffff;
+  --color-base-200: #f5f5f3;
+  --color-base-300: #e2e2de;
+  --color-base-content: #111111;
+  --color-primary: #0b57d0;
+  --color-primary-content: #ffffff;
+  --color-secondary: #111111;
+  --color-secondary-content: #ffffff;
+  --color-accent: #0b57d0;
+  --color-accent-content: #ffffff;
+  --color-neutral: #111111;
+  --color-neutral-content: #ffffff;
+  --color-info: #0b57d0;
+  --color-info-content: #ffffff;
+  --color-success: #137333;
+  --color-success-content: #ffffff;
+  --color-warning: #a35200;
+  --color-warning-content: #ffffff;
+  --color-error: #c5221f;
+  --color-error-content: #ffffff;
+  --radius-selector: 0rem;
+  --radius-field: 0rem;
+  --radius-box: 0rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
 @theme {
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* Secondary ink: 6.7:1 on white, still AA on base-200. */
+  --color-muted: #5c5c5c;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root {
-  color-scheme: light;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  /* The one motion constant. */
+  --dur: 160ms;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#app {
-  min-height: 100%;
+html {
+  caret-color: var(--color-primary);
+  scrollbar-color: #b9b9b4 transparent;
+  scrollbar-width: thin;
 }
 
 body {
@@ -31,11 +65,101 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
+/* Inverse video, like a terminal selection. */
+::selection {
+  background-color: var(--color-base-content);
+  color: var(--color-base-100);
 }
 
-::selection {
-  background-color: #e2e8f0;
-  color: #0f172a;
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+@layer components {
+  /* Section head: NAME, SYNOPSIS, STATUS … */
+  .man-h {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* Bracketed text control: [ refresh ]. Hover and press invert. */
+  .ctl {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5ch;
+    min-height: 2rem;
+    padding: 0 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--color-base-content);
+    background: transparent;
+    cursor: pointer;
+    transition:
+      background-color var(--dur) var(--ease-out-expo),
+      color var(--dur) var(--ease-out-expo);
+  }
+  .ctl::before {
+    content: "[";
+  }
+  .ctl::after {
+    content: "]";
+  }
+  .ctl:hover:not(:disabled),
+  .ctl[aria-expanded="true"] {
+    background: var(--color-base-content);
+    color: var(--color-base-100);
+  }
+  .ctl-primary {
+    color: var(--color-primary);
+  }
+  .ctl-primary:hover:not(:disabled) {
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+  }
+  .ctl:disabled {
+    color: var(--color-muted);
+    cursor: not-allowed;
+  }
+
+  .field {
+    width: 100%;
+    min-height: 2.25rem;
+    padding: 0 0.625rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    background: var(--color-base-100);
+    border: 1px solid var(--color-base-300);
+    transition: border-color var(--dur) var(--ease-out-expo);
+  }
+  .field:hover {
+    border-color: var(--color-muted);
+  }
+  .field:focus-visible {
+    border-color: var(--color-primary);
+    outline-offset: 0;
+    outline-width: 1px;
+  }
+}
+
+@media (pointer: coarse) {
+  .ctl,
+  .field {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur: 0ms;
+  }
 }

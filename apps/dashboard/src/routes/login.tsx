@@ -1,11 +1,17 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { signIn } from "../lib/auth-client";
-import { ShieldAlert, KeyRound } from "lucide-react";
+import { signIn, signOut } from "#/lib/auth-client";
+import { getAdminUser } from "#/lib/auth";
+import { APP_NAME } from "#/lib/config";
 
 export const Route = createFileRoute("/login")({
+  beforeLoad: async () => {
+    if (await getAdminUser()) throw redirect({ to: "/" });
+  },
   component: AdminLoginPage,
 });
+
+const TITLE = `${APP_NAME.toUpperCase()}(8)`;
 
 function AdminLoginPage() {
   const navigate = useNavigate();
@@ -19,85 +25,105 @@ function AdminLoginPage() {
     setLoading(true);
     setError("");
 
-    const res = await signIn.email({
-      email,
-      password,
-    });
-
+    const res = await signIn.email({ email, password });
     if (res.error) {
-      setError(res.error.message || "Authentication failed");
+      setError(
+        res.error.status === 429
+          ? "Too many attempts. Wait a minute, then try again."
+          : (res.error.message ?? "Sign-in failed. Check the email and password."),
+      );
       setLoading(false);
-    } else {
-      navigate({ to: "/" });
+      return;
     }
+    // Signed in, but the console is admins only.
+    if (!(await getAdminUser())) {
+      await signOut();
+      setError("This account has no admin role. Ask an admin to promote it, or see below.");
+      setLoading(false);
+      return;
+    }
+    navigate({ to: "/" });
   };
 
   return (
-    <div className="min-h-[75vh] flex items-center justify-center p-4">
-      <div className="card w-full max-w-md bg-base-100 border border-base-300 shadow-sm">
-        <div className="card-body p-8">
-          <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-10 h-10 rounded-xl bg-base-200 text-base-content flex items-center justify-center mb-3">
-              <KeyRound className="w-5 h-5" />
-            </div>
-            <h1 className="text-xl font-bold tracking-tight">Admin Console Access</h1>
-            <p className="text-xs text-base-content/60 mt-1">
-              Secured with Better Auth + JWT on Cloudflare Workers
-            </p>
+    <div className="min-h-screen flex flex-col">
+      <header className="border-b border-base-content">
+        <div className="mx-auto max-w-3xl h-12 px-4 sm:px-6 flex items-center justify-between font-mono text-[13px]">
+          <span className="font-bold">{TITLE}</span>
+          <span className="hidden sm:block text-muted">System Administration Manual</span>
+          <span className="font-bold">{TITLE}</span>
+        </div>
+      </header>
+
+      <main className="flex-1 mx-auto w-full max-w-3xl px-4 sm:px-6 py-12 divide-y divide-base-300">
+        <section className="pb-7 sm:grid sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-8">
+          <h2 className="man-h mb-3 sm:mb-0 sm:pt-1">Name</h2>
+          <div>
+            <h1 className="font-mono text-2xl font-bold tracking-tight">login</h1>
+            <p className="mt-1.5 text-muted">Sign in to the {APP_NAME} admin console.</p>
           </div>
+        </section>
 
-          {error && (
-            <div className="alert alert-error text-xs p-3 mb-4 rounded-xl border border-error/20">
-              <ShieldAlert className="w-4 h-4" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="form-control">
-              <label className="label py-1" htmlFor="admin-email">
-                <span className="label-text font-semibold text-xs">Email Address</span>
+        <section className="py-7 sm:grid sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-8">
+          <h2 className="man-h mb-4 sm:mb-0 sm:pt-2">Options</h2>
+          <form onSubmit={handleLogin} className="grid gap-4 max-w-sm">
+            <div className="grid gap-1.5">
+              <label htmlFor="admin-email" className="font-mono text-[13px] font-bold">
+                --email
               </label>
               <input
                 id="admin-email"
                 type="email"
+                autoComplete="username"
                 required
-                placeholder="admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="input input-bordered input-sm w-full text-xs"
+                className="field"
               />
             </div>
-
-            <div className="form-control">
-              <label className="label py-1" htmlFor="admin-password">
-                <span className="label-text font-semibold text-xs">Password</span>
+            <div className="grid gap-1.5">
+              <label htmlFor="admin-password" className="font-mono text-[13px] font-bold">
+                --password
               </label>
               <input
                 id="admin-password"
                 type="password"
+                autoComplete="current-password"
                 required
-                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input input-bordered input-sm w-full text-xs"
+                className="field"
               />
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn btn-neutral btn-sm w-full mt-2 text-xs font-semibold cursor-pointer shadow-sm"
-            >
-              {loading ? "Authenticating..." : "Sign in to Console"}
-            </button>
+            {error && (
+              <p role="alert" className="font-mono text-[13px] text-error">
+                error: {error}
+              </p>
+            )}
+            <div className="-ml-2">
+              <button type="submit" disabled={loading} className="ctl ctl-primary">
+                {loading ? "signing in…" : "sign in"}
+              </button>
+            </div>
           </form>
+        </section>
 
-          <div className="text-center text-[11px] text-base-content/50 mt-6 pt-4 border-t border-base-200">
-            Protected by Cloudflare KV Sliding Window Limit
+        <section className="pt-7 sm:grid sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-8">
+          <h2 className="man-h mb-3 sm:mb-0 sm:pt-1">Notes</h2>
+          <div className="text-sm text-muted grid gap-3 max-w-[65ch]">
+            <p>
+              Only accounts with role <code className="font-mono text-base-content">admin</code> get
+              in. Promote the first one by hand:
+            </p>
+            <pre className="font-mono text-xs text-base-content bg-base-200 p-3 overflow-x-auto">
+              {`pnpm --filter @repo/db exec wrangler d1 execute DB --local \\
+  --persist-to ../../.wrangler/state \\
+  --command "UPDATE user SET role='admin' WHERE email='you@example.com'"`}
+            </pre>
+            <p>For production, replace the --local and --persist-to flags with --remote.</p>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }

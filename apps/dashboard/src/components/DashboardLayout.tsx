@@ -1,215 +1,114 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import {
-  LayoutDashboard,
-  Users,
-  HardDrive,
-  Settings,
-  ExternalLink,
-  Bell,
-  BookOpen,
-  ChevronRight,
-  Search,
-} from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+import { signOut } from "#/lib/auth-client";
+import { APP_NAME, STOREFRONT_URL } from "#/lib/config";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const routerState = useRouterState();
-  const currentPath = routerState.location.pathname;
+// Man-page section numbers: 1 commands, 5 file formats, 7 misc, 8 administration.
+const SECTIONS = [
+  { to: "/", label: "overview", n: 1 },
+  { to: "/users", label: "users", n: 5 },
+  { to: "/files", label: "files", n: 7 },
+  { to: "/settings", label: "settings", n: 8 },
+  { to: "/guide", label: "guide", n: 9 },
+] as const;
 
-  const navItems = [
-    { label: "Overview", to: "/", icon: LayoutDashboard },
-    { label: "User Directory", to: "/users", icon: Users, badge: "D1" },
-    { label: "R2 File Storage", to: "/files", icon: HardDrive, badge: "R2" },
-    { label: "Architecture Guide", to: "/guide", icon: BookOpen, badge: "Docs" },
-    { label: "System Settings", to: "/settings", icon: Settings },
-  ];
+const TITLE = `${APP_NAME.toUpperCase()}(8)`;
 
-  const currentNav = navItems.find((item) => item.to === currentPath) || {
-    label: currentPath === "/login" ? "Authentication" : "Overview",
+export default function DashboardLayout({
+  user,
+  children,
+}: {
+  user: { email: string };
+  children: ReactNode;
+}) {
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate({ to: "/login" });
   };
 
   return (
-    <div className="drawer lg:drawer-open min-h-screen bg-base-200/50">
-      <input id="dashboard-drawer" type="checkbox" className="drawer-toggle" />
+    <div className="min-h-screen flex flex-col">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-2 focus:bg-base-100 focus:p-2 font-mono text-sm"
+      >
+        Skip to content
+      </a>
 
-      {/* Main Content Area */}
-      <div className="drawer-content flex flex-col">
-        {/* Top Navbar */}
-        <header className="navbar bg-base-100 border-b border-base-300 sticky top-0 z-30 px-4 sm:px-6 h-16 min-h-[4rem]">
-          <div className="flex-none lg:hidden">
-            <label
-              htmlFor="dashboard-drawer"
-              className="btn btn-square btn-ghost btn-sm"
-              aria-label="Open sidebar menu"
+      {/* Running header, as on every page of a manual. */}
+      <header className="sticky top-0 z-30 bg-base-100 border-b border-base-content">
+        <div className="mx-auto max-w-[90rem] h-12 px-4 sm:px-6 grid grid-cols-[1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center gap-4 font-mono text-[13px]">
+          <Link to="/" className="flex items-center gap-2.5 font-bold min-w-0">
+            <span
+              aria-hidden
+              className="grid size-6 shrink-0 place-items-center bg-primary text-primary-content text-xs"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                className="inline-block w-5 h-5 stroke-current"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </label>
-          </div>
-
-          {/* Breadcrumb Navigation */}
-          <div className="flex-1 items-center gap-2 pl-2">
-            <nav className="text-xs breadcrumbs p-0 hidden sm:block" aria-label="Breadcrumb">
-              <ul>
-                <li className="font-semibold text-base-content/60">Console</li>
-                <li className="font-bold text-base-content flex items-center gap-1">
-                  <ChevronRight className="w-3 h-3 text-base-content/40" />
-                  {currentNav.label}
-                </li>
-              </ul>
-            </nav>
-            <div className="badge badge-success badge-outline badge-sm gap-1 ml-2 text-[10px] font-semibold py-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-              Edge SPA Mode
-            </div>
-          </div>
-
-          {/* Right Header Utilities */}
-          <div className="flex-none items-center gap-1.5 sm:gap-2">
-            {/* Quick Filter / Search Trigger */}
-            <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-lg border border-base-300 bg-base-200/50 text-xs text-base-content/50">
-              <Search className="w-3.5 h-3.5" />
-              <span>Press / to search</span>
-              <kbd className="kbd kbd-xs bg-base-100">/</kbd>
-            </div>
-
-            {/* Notifications */}
-            <button
-              type="button"
-              className="btn btn-ghost btn-circle btn-sm"
-              aria-label="Notifications"
-            >
-              <div className="indicator">
-                <Bell className="w-4 h-4 text-base-content/70" />
-                <span className="badge badge-xs badge-primary indicator-item" />
-              </div>
+              {APP_NAME.charAt(0).toUpperCase()}
+            </span>
+            <span className="truncate">{TITLE}</span>
+          </Link>
+          <span className="hidden md:block text-muted">System Administration Manual</span>
+          <div className="flex items-center justify-end gap-2 min-w-0">
+            <span className="hidden sm:block text-muted truncate max-w-[28ch]" title={user.email}>
+              {user.email}
+            </span>
+            <button type="button" className="ctl" onClick={handleSignOut}>
+              sign out
             </button>
-
-            {/* User Profile */}
-            <div className="dropdown dropdown-end">
-              <div
-                tabIndex={0}
-                role="button"
-                className="btn btn-ghost btn-circle avatar placeholder btn-sm ml-1"
-                aria-label="User menu"
-              >
-                <div className="bg-neutral text-neutral-content rounded-full w-8">
-                  <span className="text-xs font-bold">AD</span>
-                </div>
-              </div>
-              <ul
-                tabIndex={0}
-                className="mt-3 z-50 p-2 shadow-lg menu menu-sm dropdown-content bg-base-100 rounded-box w-52 border border-base-300"
-              >
-                <li className="menu-title text-[11px]">Administrator</li>
-                <li>
-                  <Link to="/settings">System Settings</Link>
-                </li>
-                <li>
-                  <Link to="/guide">Architecture Guide</Link>
-                </li>
-                <li className="border-t border-base-200 mt-1 pt-1">
-                  <Link to="/login" className="text-error">
-                    Sign Out
-                  </Link>
-                </li>
-              </ul>
-            </div>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* Page Content */}
-        <main className="p-4 sm:p-6 lg:p-8 flex-1 max-w-7xl w-full mx-auto">{children}</main>
-      </div>
-
-      {/* Sidebar Drawer */}
-      <div className="drawer-side z-40 border-r border-base-300">
-        <label htmlFor="dashboard-drawer" aria-label="close sidebar" className="drawer-overlay" />
-        <aside className="bg-base-100 w-64 min-h-full flex flex-col justify-between p-4 border-r border-base-200">
-          <div>
-            {/* Logo */}
-            <div className="flex items-center gap-3 px-2 py-3 mb-4 border-b border-base-200">
-              <div className="w-8 h-8 rounded-lg bg-neutral text-neutral-content flex items-center justify-center font-extrabold text-sm shadow-sm">
-                C
-              </div>
-              <div>
-                <h1 className="font-extrabold text-sm tracking-tight leading-tight">
-                  Admin Console
-                </h1>
-                <p className="text-[10px] text-base-content/60 font-medium">
-                  Cloudflare Edge Monorepo
-                </p>
-              </div>
-            </div>
-
-            {/* Navigation Menu */}
-            <ul className="menu menu-sm gap-1 p-0">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentPath === item.to;
-                return (
-                  <li key={item.to}>
-                    <Link
-                      to={item.to}
-                      aria-current={isActive ? "page" : undefined}
-                      className={`flex items-center justify-between py-2.5 rounded-lg text-xs font-semibold transition ${
-                        isActive
-                          ? "bg-neutral text-neutral-content active"
-                          : "text-base-content/75 hover:bg-base-200 hover:text-base-content"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Icon className="w-4 h-4" />
-                        <span>{item.label}</span>
-                      </div>
-                      {item.badge && (
-                        <span
-                          className={`badge badge-xs ${
-                            isActive ? "badge-outline text-neutral-content" : "badge-neutral"
-                          }`}
-                        >
-                          {item.badge}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-
-          {/* Footer info */}
-          <div className="pt-4 border-t border-base-200 flex flex-col gap-2.5">
-            <div className="px-2 py-2 rounded-lg bg-base-200/50 border border-base-300 flex items-center justify-between text-[11px] text-base-content/70">
-              <span className="flex items-center gap-1.5 font-medium">
-                <span className="w-2 h-2 rounded-full bg-success inline-block" />
-                Workers Status
-              </span>
-              <span className="font-semibold text-success">Healthy</span>
-            </div>
-
+      <div className="mx-auto w-full max-w-[90rem] flex-1 md:grid md:grid-cols-[12rem_minmax(0,1fr)]">
+        <nav
+          aria-label="Sections"
+          className="border-b border-base-300 md:border-b-0 md:border-r md:sticky md:top-12 md:self-start md:h-[calc(100vh-3rem)] flex md:flex-col"
+        >
+          <h2 className="man-h hidden md:block px-6 pt-10 pb-3 text-muted">Index</h2>
+          <ul className="flex flex-wrap md:flex-col md:flex-nowrap px-2 md:px-3 py-1 md:py-0 font-mono text-[13px]">
+            {SECTIONS.map((s) => (
+              <li key={s.to}>
+                <Link
+                  to={s.to}
+                  activeOptions={{ exact: true }}
+                  className="group flex items-baseline gap-0.5 px-3 py-2 md:py-1.5 transition-colors duration-(--dur) hover:bg-base-200 data-[status=active]:text-primary data-[status=active]:font-bold"
+                >
+                  {s.label}
+                  <span className="text-muted group-data-[status=active]:text-primary">
+                    ({s.n})
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden md:block mt-auto px-6 pb-6 font-mono text-xs leading-6">
+            <p className="man-h text-[11px] text-muted mb-1">See also</p>
             <a
-              href="http://localhost:3000"
+              href={STOREFRONT_URL}
               target="_blank"
               rel="noreferrer"
-              className="btn btn-outline btn-sm justify-between w-full text-xs font-semibold"
+              className="underline hover:text-primary"
             >
-              <span>Visit Storefront</span>
-              <ExternalLink className="w-3.5 h-3.5 text-base-content/50" />
+              storefront(1)
             </a>
           </div>
-        </aside>
+        </nav>
+
+        <main id="main" className="min-w-0 px-4 sm:px-8 lg:px-12 pt-8 pb-16 md:pt-10">
+          {children}
+        </main>
       </div>
+
+      {/* Running footer. */}
+      <footer className="border-t border-base-content">
+        <div className="mx-auto max-w-[90rem] h-10 px-4 sm:px-6 flex items-center justify-between font-mono text-xs text-muted">
+          <span>{APP_NAME} admin</span>
+          <span className="hidden sm:inline">{new Date().toISOString().slice(0, 10)}</span>
+          <span>{TITLE}</span>
+        </div>
+      </footer>
     </div>
   );
 }

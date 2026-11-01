@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { DASHBOARD_URL } from "#/lib/config";
 import { ArrowRight, ShieldCheck, Zap, Database, Layers } from "lucide-react";
 
 export const Route = createFileRoute("/")({ component: HomePage });
@@ -66,7 +67,7 @@ function HomePage() {
           </Link>
 
           <a
-            href="http://localhost:3001"
+            href={DASHBOARD_URL}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-5 py-3 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 hover:text-neutral-900"

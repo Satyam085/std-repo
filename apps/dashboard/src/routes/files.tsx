@@ -1,198 +1,188 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { HardDrive, Upload, Copy, Check, FileText, Image, FileArchive, Globe } from "lucide-react";
-import { useState } from "react";
+import { env } from "cloudflare:workers";
+import { useRef, useState } from "react";
+import { adminOnly } from "#/lib/auth";
+import {
+  Empty,
+  ManPage,
+  Section,
+  formatBytes,
+  stamp,
+  tableClass,
+  tdClass,
+  thClass,
+  wideOnly,
+} from "#/components/Man";
 
-interface FileItem {
-  id: string;
-  key: string;
-  filename: string;
-  contentType: string;
-  size: number;
-  uploadedAt: string;
-}
+export const fetchFiles = createServerFn({ method: "GET" })
+  .middleware([adminOnly])
+  .handler(async () => {
+    // `include` is honored at runtime (compat date ≥ 2022-08-04) but missing from the base types.
+    const list = await env.STORAGE.list({ limit: 500, include: ["httpMetadata"] } as R2ListOptions);
+    return {
+      truncated: list.truncated,
+      objects: list.objects.map((o) => ({
+        key: o.key,
+        size: o.size,
+        uploaded: o.uploaded.toISOString(),
+        contentType: o.httpMetadata?.contentType ?? "",
+      })),
+    };
+  });
 
-const SAMPLE_FILES: FileItem[] = [
-  {
-    id: "f-1",
-    key: "uploads/2026/product-hero.webp",
-    filename: "product-hero.webp",
-    contentType: "image/webp",
-    size: 245000,
-    uploadedAt: "2026-10-30",
-  },
-  {
-    id: "f-2",
-    key: "documents/terms-v2.pdf",
-    filename: "terms-v2.pdf",
-    contentType: "application/pdf",
-    size: 1420000,
-    uploadedAt: "2026-10-25",
-  },
-  {
-    id: "f-3",
-    key: "backups/export-20261024.zip",
-    filename: "export-20261024.zip",
-    contentType: "application/zip",
-    size: 8900000,
-    uploadedAt: "2026-10-24",
-  },
-];
-
-export const fetchFilesServer = createServerFn({ method: "GET" }).handler(async () => {
-  return SAMPLE_FILES;
-});
+export const uploadFile = createServerFn({ method: "POST" })
+  .middleware([adminOnly])
+  .validator((data: FormData) => {
+    const file = data.get("file");
+    if (!(file instanceof File) || file.size === 0) throw new Error("Choose a file to upload.");
+    return file;
+  })
+  .handler(async ({ data: file }) => {
+    const key = `uploads/${file.name}`;
+    // Never overwrite silently: an existing key is an error, not a replace.
+    if (await env.STORAGE.head(key))
+      throw new Error(`${key} already exists. Rename the file first.`);
+    await env.STORAGE.put(key, file.stream(), {
+      httpMetadata: { contentType: file.type || "application/octet-stream" },
+    });
+    return key;
+  });
 
 export const Route = createFileRoute("/files")({
-  loader: async () => {
-    return await fetchFilesServer();
-  },
+  loader: () => fetchFiles(),
   component: FilesPage,
 });
 
-function formatBytes(bytes: number) {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-}
-
 function FilesPage() {
-  const fileList = Route.useLoaderData();
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const { objects, truncated } = Route.useLoaderData();
+  const router = useRouter();
+  const input = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<{ kind: "idle" | "busy" | "ok" | "error"; text?: string }>({
+    kind: "idle",
+  });
+  const [copied, setCopied] = useState<string | null>(null);
+  const total = objects.reduce((sum, o) => sum + o.size, 0);
 
-  const copyUrl = (key: string) => {
-    navigator.clipboard.writeText(`https://r2.yourdomain.com/${key}`);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
+  const upload = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setStatus({ kind: "busy" });
+    try {
+      const key = await uploadFile({ data: new FormData(e.currentTarget) });
+      if (input.current) input.current.value = "";
+      setStatus({ kind: "ok", text: `Uploaded ${key}.` });
+      await router.invalidate();
+    } catch (err) {
+      setStatus({ kind: "error", text: err instanceof Error ? err.message : "Upload failed." });
+    }
+  };
+
+  const copyKey = async (key: string) => {
+    await navigator.clipboard.writeText(key);
+    setCopied(key);
+    setTimeout(() => setCopied((k) => (k === key ? null : k)), 2000);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">Cloudflare R2 Storage</h1>
-          <p className="text-xs text-base-content/70 mt-1">
-            Zero-egress object storage connected via Worker binding <code>env.STORAGE</code>.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="btn btn-neutral btn-sm gap-2 text-xs font-semibold shadow-sm cursor-pointer"
-          onClick={() => alert("Direct streaming upload to R2 via presigned Worker URL.")}
-        >
-          <Upload className="w-4 h-4" />
-          Upload Object
-        </button>
-      </div>
+    <ManPage
+      name="files"
+      summary="Objects in the R2 bucket bound as env.STORAGE. Uploads go under uploads/."
+      synopsis={
+        <>
+          loader → fetchFiles() → STORAGE.list() · {objects.length}
+          {truncated ? "+" : ""} objects · {formatBytes(total)}
+        </>
+      }
+    >
+      <Section title="Upload" id="upload">
+        <form onSubmit={upload} className="flex flex-wrap items-center gap-3">
+          <label className="min-w-0">
+            <span className="sr-only">File to upload</span>
+            <input
+              ref={input}
+              type="file"
+              name="file"
+              required
+              className="font-mono text-[13px] text-muted file:mr-3 file:px-2 file:min-h-8 file:border file:border-base-content file:bg-transparent file:font-mono file:text-[13px] file:text-base-content file:cursor-pointer hover:file:bg-base-content hover:file:text-base-100 file:transition-colors"
+            />
+          </label>
+          <button type="submit" className="ctl ctl-primary" disabled={status.kind === "busy"}>
+            {status.kind === "busy" ? "uploading…" : "upload"}
+          </button>
+          <span
+            role="status"
+            className={`font-mono text-xs ${status.kind === "error" ? "text-error" : "text-muted"}`}
+          >
+            {status.text}
+          </span>
+        </form>
+      </Section>
 
-      {/* Bucket Info Banner */}
-      <div className="card bg-base-100 border border-base-300 shadow-sm p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-base-200 text-base-content rounded-lg">
-              <HardDrive className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-semibold text-base-content">prod-storage</span>
-              <span className="text-base-content/50 ml-2">Bucket attached to Workers</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 text-base-content/70">
-            <span className="flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-success" />
-              Global Replication
-            </span>
-            <span className="badge badge-success badge-outline badge-sm text-[10px] font-bold">
-              0.00 Egress Fee
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Files Table */}
-      <div className="card bg-base-100 border border-base-300 shadow-sm">
-        <div className="card-body p-6">
+      <Section title="Objects" id="objects">
+        {objects.length === 0 ? (
+          <Empty>The bucket is empty. Upload a file and it appears here.</Empty>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="table table-sm w-full text-xs" aria-label="Stored objects list">
+            <table className={tableClass}>
               <thead>
-                <tr className="border-b border-base-200 text-base-content/50 uppercase text-[10px] tracking-wider">
-                  <th scope="col" className="py-2.5">
-                    File Name
+                <tr>
+                  <th scope="col" className={thClass}>
+                    Key
                   </th>
-                  <th scope="col" className="py-2.5">
-                    Content Type
+                  <th scope="col" className={`${thClass} ${wideOnly}`}>
+                    Type
                   </th>
-                  <th scope="col" className="py-2.5">
+                  <th scope="col" className={`${thClass} ${wideOnly} text-right`}>
                     Size
                   </th>
-                  <th scope="col" className="py-2.5">
-                    Uploaded
+                  <th scope="col" className={`${thClass} ${wideOnly} text-right`}>
+                    Uploaded (UTC)
                   </th>
-                  <th scope="col" className="py-2.5 text-right">
-                    Direct Link
+                  <th scope="col" className={`${thClass} pr-0`}>
+                    <span className="sr-only">Actions</span>
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-base-200">
-                {fileList.map((file) => {
-                  const isImg = file.contentType.startsWith("image/");
-                  const isPdf = file.contentType.includes("pdf");
-                  return (
-                    <tr key={file.id} className="hover:bg-base-200/50 transition-colors">
-                      <td className="py-3">
-                        <div className="flex items-center gap-2.5 font-medium text-base-content">
-                          {isImg ? (
-                            <Image className="w-4 h-4 text-info" />
-                          ) : isPdf ? (
-                            <FileText className="w-4 h-4 text-warning" />
-                          ) : (
-                            <FileArchive className="w-4 h-4 text-accent" />
-                          )}
-                          <span>{file.filename}</span>
-                        </div>
-                      </td>
-                      <td className="py-3">
-                        <span className="badge badge-sm badge-ghost text-[10px] font-medium">
-                          {file.contentType}
-                        </span>
-                      </td>
-                      <td className="text-base-content/80 text-xs tabular-nums py-3">
-                        {formatBytes(file.size)}
-                      </td>
-                      <td className="text-base-content/60 text-xs tabular-nums py-3">
-                        {file.uploadedAt}
-                      </td>
-                      <td className="text-right py-3">
-                        <button
-                          type="button"
-                          onClick={() => copyUrl(file.key)}
-                          className="btn btn-ghost btn-xs gap-1.5 text-xs"
-                          aria-label={`Copy link for ${file.filename}`}
-                        >
-                          {copiedKey === file.key ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-success" />
-                              <span className="text-success font-medium">Copied</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5 text-base-content/60" />
-                              <span className="text-base-content/75">Copy URL</span>
-                            </>
-                          )}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+              <tbody className="divide-y divide-base-300">
+                {objects.map((o) => (
+                  <tr
+                    key={o.key}
+                    className="hover:bg-base-200/60 transition-colors duration-(--dur)"
+                  >
+                    <td className={tdClass}>
+                      <span className="[overflow-wrap:anywhere]">{o.key}</span>
+                      <span className="block sm:hidden text-muted">
+                        {o.contentType || "n/a"} · {formatBytes(o.size)} · {stamp(o.uploaded)}
+                      </span>
+                    </td>
+                    <td className={`${tdClass} ${wideOnly} text-muted`}>
+                      {o.contentType || "n/a"}
+                    </td>
+                    <td className={`${tdClass} ${wideOnly} text-right whitespace-nowrap`}>
+                      {formatBytes(o.size)}
+                    </td>
+                    <td
+                      className={`${tdClass} ${wideOnly} text-right text-muted whitespace-nowrap`}
+                    >
+                      {stamp(o.uploaded)}
+                    </td>
+                    <td className="py-1 text-right">
+                      <button
+                        type="button"
+                        className="ctl"
+                        onClick={() => copyKey(o.key)}
+                        aria-label={`Copy key ${o.key}`}
+                      >
+                        {copied === o.key ? "copied" : "copy key"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
-    </div>
+        )}
+      </Section>
+    </ManPage>
   );
 }

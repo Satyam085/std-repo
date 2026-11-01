@@ -53,10 +53,11 @@ The repository contains two distinct frontend applications sharing six modular w
 
 ### 2. `apps/dashboard` (Backend Admin Console)
 
-- **Rendering Strategy**: **SPA Mode (Zero SSR)** configured via `defaultSsr: false` in `apps/dashboard/src/router.tsx`.
+- **Rendering Strategy**: **SPA Mode (Zero SSR)** configured via `createStart(() => ({ defaultSsr: false }))` in `apps/dashboard/src/start.ts`.
 - **Data Layer**: **Native TanStack Router loaders and TanStack Start RPC server functions (`createServerFn`)**.
   > ⚠️ **CRITICAL RULE FOR AGENTS**: **Never install or add `@tanstack/react-query` to `apps/dashboard`.** The dashboard must remain ultra-lean using native router loaders and server functions.
-- **Styling**: **DaisyUI 5** via `@plugin "daisyui"` in `apps/dashboard/src/styles.css` with a **single, clean, light theme** (`light --default`).
+- **Styling**: **DaisyUI 5** via `@plugin "daisyui"` in `apps/dashboard/src/styles.css` with a **single, clean, light theme** (`light --default`, overridden through `@plugin "daisyui/theme"`). Visual rules live in [`apps/dashboard/DESIGN.md`](./apps/dashboard/DESIGN.md) ("Manual Page" world). Build pages from `src/components/Man.tsx` (`ManPage`, `Section`, `Leader`, table classes).
+- **Auth Guard**: The root `beforeLoad` redirects to `/login` unless the user has `role = "admin"`. **Every** `createServerFn` that touches data must add `.middleware([adminOnly])` from `#/lib/auth`, because server functions are public RPC endpoints.
 - **Target URL**: Dedicated admin subdomain (e.g., `https://admin.example.com`).
 - **Key Routes**:
   - `/` — Real-time telemetry, service health, and audit event stream.
@@ -87,9 +88,10 @@ The repository contains two distinct frontend applications sharing six modular w
 
 ### `@repo/auth` (Authentication)
 
-- Built on **Better Auth** with D1 Drizzle adapter and JWT plugin (`jwt({ sessionCookieCache: true })`).
-- The JWT plugin enables stateless cross-subdomain verification between `example.com` and `admin.example.com` without repetitive database roundtrips.
-- Server mounting: Handled in `apps/web/src/routes/api/auth.$.ts`.
+- Built on **Better Auth** with D1 Drizzle adapter and JWT plugin (`jwt({ sessionCookieCache: true })` + `session.cookieCache.strategy: "jwt"`; keys live in the `jwks` table).
+- `user.role` is an additional field with `input: false`, so clients can never self-assign `admin`.
+- Set `AUTH_COOKIE_DOMAIN` (e.g. `example.com`) to share one session between `example.com` and `admin.example.com`.
+- Server mounting: each app's `src/routes/api/auth.$.ts` calls `getAuth().handler(request)` (from `#/lib/auth`), with POSTs rate-limited in KV. No Hono or other router is needed.
 - Client usage:
   ```typescript
   import { signIn, signUp, useSession } from "#/lib/auth-client";
@@ -129,20 +131,19 @@ The repository contains two distinct frontend applications sharing six modular w
 
 AI agents must execute the following commands when making changes:
 
-| Action                     | Command                     | Notes                                                                    |
-| :------------------------- | :-------------------------- | :----------------------------------------------------------------------- |
-| **Install Dependencies**   | `pnpm install`              | Uses workspace lockfile                                                  |
-| **Run Dev Servers**        | `pnpm dev`                  | Storefront (port 3000), Dashboard (port 3001)                            |
-| **Lint & Format Check**    | `pnpm check`                | Runs `vp check` across all packages                                      |
-| **Auto-Fix Code Quality**  | `pnpm check:fix`            | Runs `vp check --fix` (Oxfmt + Oxlint)                                   |
-| **Staged Git Check**       | `vp staged`                 | Automatically called by Git pre-commit hook                              |
-| **Enable Git Hooks**       | `vp hooks enable`           | Configures `.vite-hooks` dispatcher                                      |
-| **Type Check**             | `pnpm typecheck`            | Runs `tsc --noEmit` across all 8 workspace packages                      |
-| **Build Apps**             | `pnpm build`                | Compiles production bundles via Turborepo                                |
-| **Generate DB Migrations** | `pnpm db:generate`          | Creates SQL migrations in `packages/db`                                  |
-| **Sync Cloudflare IDs**    | `pnpm cf:sync`              | Syncs D1, KV, R2 IDs from `.env` across web, dashboard, and db wranglers |
-| **Apply DB Locally**       | `pnpm db:migrate:local`     | Applies migrations to Miniflare local D1                                 |
-| **Approve Native Builds**  | `pnpm approve-builds --all` | Run if pnpm v12 blocks esbuild or workerd                                |
+| Action                     | Command                     | Notes                                                             |
+| :------------------------- | :-------------------------- | :---------------------------------------------------------------- |
+| **Install Dependencies**   | `pnpm install`              | Uses workspace lockfile                                           |
+| **Run Dev Servers**        | `pnpm dev`                  | Storefront (port 3000), Dashboard (port 3001)                     |
+| **Lint & Format Check**    | `pnpm check`                | Runs `vp check` across all packages                               |
+| **Auto-Fix Code Quality**  | `pnpm check:fix`            | Runs `vp check --fix` (Oxfmt + Oxlint)                            |
+| **Staged Git Check**       | `vp staged`                 | Automatically called by Git pre-commit hook                       |
+| **Enable Git Hooks**       | `vp hooks enable`           | Configures `.vite-hooks` dispatcher                               |
+| **Type Check**             | `pnpm typecheck`            | Runs `tsc --noEmit` across all 8 workspace packages               |
+| **Build Apps**             | `pnpm build`                | Compiles production bundles via Turborepo                         |
+| **Generate DB Migrations** | `pnpm db:generate`          | Creates SQL migrations in `packages/db`                           |
+| **Apply DB Locally**       | `pnpm db:migrate:local`     | Applies migrations to the shared local state in `.wrangler/state` |
+| **Approve Native Builds**  | `pnpm approve-builds --all` | Run if pnpm v12 blocks esbuild or workerd                         |
 
 ---
 
@@ -167,6 +168,9 @@ AI agents must execute the following commands when making changes:
    - Never import Node-specific modules (`fs`, `child_process`, `net`) into Worker entry points.
    - Access Cloudflare bindings via `env` from `"cloudflare:workers"`.
    - Update `cloudflare-env.d.ts` when adding new bindings.
+7. **NEVER Commit Cloudflare IDs or Secrets**:
+   - `wrangler.jsonc` files hold binding and resource **names** only. Do **NOT** add `database_id`, KV `id`, account IDs, or secrets to them.
+   - Real IDs come from the root `.env` (gitignored) or CI env vars and are injected at build time by the `config` hook in each app's `vite.config.ts`. Secrets go through `wrangler secret put`.
 
 ---
 

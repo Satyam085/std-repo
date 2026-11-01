@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { DASHBOARD_URL } from "#/lib/config";
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -26,7 +27,7 @@ export default function Footer() {
             Architecture Guide
           </Link>
           <a
-            href="http://localhost:3001"
+            href={DASHBOARD_URL}
             target="_blank"
             rel="noreferrer"
             className="transition hover:text-neutral-900"

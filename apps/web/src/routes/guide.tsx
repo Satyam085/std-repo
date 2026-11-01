@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { DASHBOARD_URL } from "#/lib/config";
 import {
   Layers,
   Database,
@@ -224,7 +225,7 @@ function GuidePage() {
           Explore Catalog
         </Link>
         <a
-          href="http://localhost:3001"
+          href={DASHBOARD_URL}
           target="_blank"
           rel="noreferrer"
           className="px-6 py-2.5 bg-white border border-neutral-200 text-neutral-800 text-xs font-semibold rounded-xl hover:bg-neutral-50 transition shadow-sm inline-flex items-center gap-1.5"

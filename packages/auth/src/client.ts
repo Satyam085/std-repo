@@ -1,10 +1,12 @@
-import { createAuthClient } from "better-auth/client";
-import { jwtClient } from "better-auth/client/plugins";
+import { createAuthClient } from "better-auth/react";
+import { inferAdditionalFields, jwtClient } from "better-auth/client/plugins";
+import type { AuthInstance } from "./server";
 
+// baseURL defaults to window.location.origin, i.e. each app talks to its own /api/auth.
 export function createClient(baseURL?: string) {
   return createAuthClient({
-    baseURL: baseURL || (typeof window !== "undefined" ? window.location.origin : undefined),
-    plugins: [jwtClient()],
+    baseURL,
+    plugins: [jwtClient(), inferAdditionalFields<AuthInstance>()],
   });
 }
 

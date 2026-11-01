@@ -1,273 +1,234 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { createDb, user } from "@repo/db";
+import { createDb, desc, eq, user } from "@repo/db";
 import { env } from "cloudflare:workers";
-import { Search, UserPlus, MoreHorizontal, ShieldCheck, X, Check, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
+import { z } from "zod";
+import { adminOnly } from "#/lib/auth";
+import {
+  Empty,
+  ManPage,
+  Section,
+  stamp,
+  tableClass,
+  tdClass,
+  thClass,
+  wideOnly,
+} from "#/components/Man";
 
-interface UserItem {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  emailVerified: boolean;
-  createdAt: string;
-}
-
-const SAMPLE_USERS: UserItem[] = [
-  {
-    id: "usr-1",
-    name: "Satyam Sharma",
-    email: "satyam@example.com",
-    role: "admin",
-    emailVerified: true,
-    createdAt: "2026-10-15",
-  },
-  {
-    id: "usr-2",
-    name: "Emma Watson",
-    email: "emma@example.com",
-    role: "manager",
-    emailVerified: true,
-    createdAt: "2026-10-18",
-  },
-  {
-    id: "usr-3",
-    name: "David Kim",
-    email: "david.k@example.com",
-    role: "user",
-    emailVerified: false,
-    createdAt: "2026-10-24",
-  },
-  {
-    id: "usr-4",
-    name: "Sofia Alva",
-    email: "sofia@example.com",
-    role: "user",
-    emailVerified: true,
-    createdAt: "2026-10-29",
-  },
-];
-
-export const fetchUsersServer = createServerFn({ method: "GET" }).handler(async () => {
-  try {
+export const fetchUsers = createServerFn({ method: "GET" })
+  .middleware([adminOnly])
+  .handler(async () => {
     const db = createDb(env.DB);
-    const list = await db.select().from(user).limit(50);
-    if (list.length > 0) {
-      return list.map((u) => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        role: u.role,
-        emailVerified: u.emailVerified,
-        createdAt: new Date(u.createdAt).toISOString().split("T")[0],
-      })) as UserItem[];
-    }
-  } catch {
-    // Return sample users if D1 is unseeded
-  }
-  return SAMPLE_USERS;
-});
+    return db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        emailVerified: user.emailVerified,
+        createdAt: user.createdAt,
+      })
+      .from(user)
+      .orderBy(desc(user.createdAt))
+      .limit(500);
+  });
+
+export const setUserRole = createServerFn({ method: "POST" })
+  .middleware([adminOnly])
+  .validator(z.object({ id: z.string(), role: z.enum(["user", "admin"]) }))
+  .handler(async ({ data, context }) => {
+    // Guard against locking the last admin out by accident.
+    if (data.id === context.user.id) throw new Error("You can't change your own role.");
+    const db = createDb(env.DB);
+    await db
+      .update(user)
+      .set({ role: data.role, updatedAt: new Date() })
+      .where(eq(user.id, data.id));
+  });
 
 export const Route = createFileRoute("/users")({
-  loader: async () => {
-    return await fetchUsersServer();
-  },
+  loader: () => fetchUsers(),
   component: UsersPage,
 });
 
 function UsersPage() {
   const users = Route.useLoaderData();
-  const [searchTerm, setSearchTerm] = useState("");
+  const { user: admin } = Route.useRouteContext();
+  const [query, setQuery] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const q = query.trim().toLowerCase();
+  const shown = q
+    ? users.filter((u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
+    : users;
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">User Directory</h1>
-          <p className="text-xs text-base-content/70 mt-1">
-            Accounts synced directly from Cloudflare D1 with Better Auth roles.
-          </p>
+    <ManPage
+      name="users"
+      summary="Accounts in the D1 user table, newest first. Open a row to see details or change its role."
+      synopsis={<>loader → fetchUsers() → select from user · {users.length} rows</>}
+    >
+      <Section title="Accounts" id="accounts">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4">
+          <label className="flex-1 min-w-[16rem] max-w-sm">
+            <span className="sr-only">Filter by name or email</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="filter by name or email"
+              className="field"
+            />
+          </label>
+          <span className="font-mono text-xs text-muted tabular-nums" aria-live="polite">
+            {shown.length} of {users.length}
+          </span>
         </div>
-        <button
-          type="button"
-          className="btn btn-neutral btn-sm gap-2 text-xs font-semibold shadow-sm cursor-pointer"
-          onClick={() => alert("New user registration handled via Better Auth onboarding.")}
-        >
-          <UserPlus className="w-4 h-4" />
-          Invite User
-        </button>
-      </div>
 
-      {/* Table Card */}
-      <div className="card bg-base-100 border border-base-300 shadow-sm">
-        <div className="card-body p-6">
-          {/* Search bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" />
-              <input
-                type="text"
-                placeholder="Search by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="input input-bordered input-sm w-full pl-9 pr-8 text-xs"
-                aria-label="Filter user accounts"
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content"
-                  aria-label="Clear search"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-            <div className="text-xs text-base-content/60 font-medium tabular-nums">
-              Showing {filteredUsers.length} of {users.length} users
-            </div>
-          </div>
-
-          {/* Table */}
+        {users.length === 0 ? (
+          <Empty>No accounts yet. Register on the storefront and the account appears here.</Empty>
+        ) : shown.length === 0 ? (
+          <Empty>
+            Nothing matches “{query}”.{" "}
+            <button type="button" className="ctl -ml-2" onClick={() => setQuery("")}>
+              clear filter
+            </button>
+          </Empty>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="table table-sm w-full text-xs" aria-label="Users list">
+            <table className={tableClass}>
               <thead>
-                <tr className="border-b border-base-200 text-base-content/50 uppercase text-[10px] tracking-wider">
-                  <th scope="col" className="py-2.5">
-                    User
+                <tr>
+                  <th scope="col" className={thClass}>
+                    Account
                   </th>
-                  <th scope="col" className="py-2.5">
+                  <th scope="col" className={thClass}>
                     Role
                   </th>
-                  <th scope="col" className="py-2.5">
-                    Email Status
+                  <th scope="col" className={`${thClass} ${wideOnly}`}>
+                    Email
                   </th>
-                  <th scope="col" className="py-2.5">
-                    Registered
-                  </th>
-                  <th scope="col" className="py-2.5 text-right">
-                    Actions
+                  <th scope="col" className={`${thClass} ${wideOnly} text-right pr-0`}>
+                    Created (UTC)
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-base-200">
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map((item) => (
-                    <tr key={item.id} className="hover:bg-base-200/50 transition-colors">
-                      <td className="py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="avatar placeholder">
-                            <div className="bg-neutral text-neutral-content rounded-full w-8 text-xs font-bold shadow-sm">
-                              <span>{item.name.slice(0, 2).toUpperCase()}</span>
-                            </div>
-                          </div>
-                          <div>
-                            <div className="font-semibold text-base-content">{item.name}</div>
-                            <div className="text-xs text-base-content/60">{item.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3">
-                        <span
-                          className={`badge badge-sm font-semibold text-[10px] capitalize gap-1 ${
-                            item.role === "admin"
-                              ? "badge-neutral"
-                              : item.role === "manager"
-                                ? "badge-primary badge-outline"
-                                : "badge-ghost"
-                          }`}
-                        >
-                          {item.role === "admin" && <ShieldCheck className="w-3 h-3" />}
-                          {item.role}
-                        </span>
-                      </td>
-                      <td className="py-3">
-                        {item.emailVerified ? (
-                          <span className="badge badge-success badge-outline badge-sm text-[10px] gap-1">
-                            <Check className="w-3 h-3" />
-                            Verified
-                          </span>
-                        ) : (
-                          <span className="badge badge-warning badge-outline badge-sm text-[10px] gap-1">
-                            <AlertCircle className="w-3 h-3" />
-                            Unverified
-                          </span>
-                        )}
-                      </td>
-                      <td className="text-base-content/60 text-xs tabular-nums py-3">
-                        {item.createdAt}
-                      </td>
-                      <td className="text-right py-3">
-                        <div className="dropdown dropdown-left dropdown-end">
-                          <div
-                            tabIndex={0}
-                            role="button"
-                            className="btn btn-ghost btn-circle btn-xs"
-                            aria-label={`Actions for ${item.name}`}
+              <tbody className="divide-y divide-base-300">
+                {shown.map((u) => {
+                  const open = openId === u.id;
+                  // The open row stays in full ink; its neighbours recede.
+                  const recede = openId !== null && !open;
+                  return (
+                    <Fragment key={u.id}>
+                      <tr
+                        className={`transition-colors duration-(--dur) ${recede ? "text-muted" : ""} ${open ? "bg-base-200" : "hover:bg-base-200/60"}`}
+                      >
+                        <td className={tdClass}>
+                          <button
+                            type="button"
+                            aria-expanded={open}
+                            aria-controls={`user-${u.id}`}
+                            onClick={() => setOpenId(open ? null : u.id)}
+                            className="text-left cursor-pointer group"
                           >
-                            <MoreHorizontal className="w-4 h-4 text-base-content/60" />
-                          </div>
-                          <ul
-                            tabIndex={0}
-                            className="dropdown-content menu p-1.5 shadow-lg bg-base-100 rounded-box w-36 z-50 border border-base-300 text-xs"
-                          >
-                            <li>
-                              <button
-                                type="button"
-                                onClick={() => alert(`Edit role for ${item.name}`)}
-                              >
-                                Edit Role
-                              </button>
-                            </li>
-                            <li>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  alert(`Password reset link dispatched to ${item.email}`)
-                                }
-                                className="text-warning"
-                              >
-                                Reset Password
-                              </button>
-                            </li>
-                          </ul>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="text-center py-10">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <Search className="w-6 h-6 text-base-content/30" />
-                        <p className="text-sm font-medium text-base-content/70">
-                          No users found matching &ldquo;{searchTerm}&rdquo;
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => setSearchTerm("")}
-                          className="btn btn-xs btn-outline mt-1"
+                            <span className="font-bold group-hover:underline">{u.name}</span>
+                            <span className="block text-muted [overflow-wrap:anywhere]">
+                              {u.email}
+                            </span>
+                            <span className="block sm:hidden text-muted">
+                              {u.emailVerified ? "verified" : "unverified"} · {stamp(u.createdAt)}
+                            </span>
+                          </button>
+                        </td>
+                        <td className={tdClass}>
+                          <span className={u.role === "admin" ? "font-bold" : ""}>{u.role}</span>
+                        </td>
+                        {/* Email verification is off in the template, so unverified is the norm, not a warning. */}
+                        <td className={`${tdClass} ${wideOnly}`}>
+                          {u.emailVerified ? (
+                            "verified"
+                          ) : (
+                            <span className="text-muted">unverified</span>
+                          )}
+                        </td>
+                        <td
+                          className={`${tdClass} ${wideOnly} text-right text-muted whitespace-nowrap pr-0`}
                         >
-                          Clear Search
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )}
+                          {stamp(u.createdAt)}
+                        </td>
+                      </tr>
+                      {open && (
+                        <tr id={`user-${u.id}`} className="bg-base-200">
+                          <td colSpan={4} className="px-0 pb-5 pt-1">
+                            <UserDetail user={u} isSelf={u.id === admin?.id} />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
-    </div>
+        )}
+      </Section>
+    </ManPage>
+  );
+}
+
+function UserDetail({ user: u, isSelf }: { user: { id: string; role: string }; isSelf: boolean }) {
+  const router = useRouter();
+  const [role, setRole] = useState(u.role);
+  const [state, setState] = useState<"idle" | "saving" | "saved" | string>("idle");
+
+  const save = async () => {
+    setState("saving");
+    try {
+      await setUserRole({ data: { id: u.id, role: role as "user" | "admin" } });
+      setState("saved");
+      await router.invalidate();
+    } catch (err) {
+      setState(err instanceof Error ? err.message : "Could not save the role.");
+    }
+  };
+
+  return (
+    <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-[8rem_minmax(0,1fr)] px-3 font-mono text-[13px]">
+      <dt className="text-muted">id</dt>
+      <dd className="break-all">{u.id}</dd>
+      <dt className="text-muted">
+        <label htmlFor={`role-${u.id}`}>role</label>
+      </dt>
+      <dd className="flex flex-wrap items-center gap-2">
+        <select
+          id={`role-${u.id}`}
+          value={role}
+          disabled={isSelf}
+          onChange={(e) => setRole(e.target.value)}
+          className="field w-auto"
+        >
+          <option value="user">user</option>
+          <option value="admin">admin</option>
+        </select>
+        <button
+          type="button"
+          className="ctl ctl-primary"
+          onClick={save}
+          disabled={isSelf || role === u.role || state === "saving"}
+        >
+          {state === "saving" ? "saving…" : "save role"}
+        </button>
+        <span className="text-xs text-muted" role="status">
+          {isSelf ? (
+            "This is you. Another admin has to change your role."
+          ) : state === "saved" ? (
+            "Saved. Takes effect within 5 minutes (session cache)."
+          ) : state !== "idle" && state !== "saving" ? (
+            <span className="text-error">{state}</span>
+          ) : null}
+        </span>
+      </dd>
+    </dl>
   );
 }

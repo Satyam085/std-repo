@@ -20,10 +20,18 @@ export const Route = createFileRoute("/api/contact")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // 1. Rate limiting via Cloudflare KV (max 5 submissions per minute per IP)
+        // Admin-editable in the dashboard (/settings); written to KV under this key.
+        const settings = {
+          supportEmail: "admin@example.com",
+          contactLimit: 5,
+          contactWindowSeconds: 60,
+          ...(await env.KV.get<Record<string, unknown>>("settings:contact", "json")),
+        } as { supportEmail: string; contactLimit: number; contactWindowSeconds: number };
+
+        // 1. Rate limiting via Cloudflare KV (per IP)
         const rateLimitResult = await checkRateLimit(env.KV, request, {
-          limit: 5,
-          windowSeconds: 60,
+          limit: settings.contactLimit,
+          windowSeconds: settings.contactWindowSeconds,
           prefix: "contact-rl",
         });
 
@@ -57,7 +65,7 @@ export const Route = createFileRoute("/api/contact")({
           });
 
           await emailService.send({
-            to: "admin@example.com",
+            to: settings.supportEmail,
             subject: `[Contact Form] ${parsed.subject}`,
             html: emailContent.html,
             text: emailContent.text,

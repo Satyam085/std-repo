@@ -1,11 +1,13 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalDependencies": [".env"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["dist/**", ".output/**"]
+      "outputs": ["dist/**", ".output/**"],
+      "env": ["D1_DATABASE_ID", "KV_NAMESPACE_ID", "R2_BUCKET_NAME", "VITE_*"]
     },
     "typecheck": {
       "dependsOn": ["^typecheck"],

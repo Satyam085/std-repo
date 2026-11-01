@@ -72,6 +72,15 @@ Powered by **pnpm workspaces**, **Turborepo**, **Vite+** (VoidZero), **TanStack 
 
 ---
 
+## 🧬 Starting a New Product From This Template
+
+1. Copy `.env.example` to `.env` and fill it in. It's gitignored; IDs and secrets never go in tracked files.
+2. Rename the workers (`name` in both `apps/*/wrangler.jsonc`), the resources (`database_name`, `bucket_name`), and `APP_NAME` in their `vars`.
+3. Rebrand the dashboard with `VITE_APP_NAME` in `.env` and the single accent `--color-primary` in `apps/dashboard/src/styles.css`. Its design rules are in `apps/dashboard/DESIGN.md`.
+4. Set `VITE_STOREFRONT_URL` / `VITE_DASHBOARD_URL` so each app links to the other's real domain.
+
+---
+
 ## ⚡ Quick Start
 
 ### 1. Prerequisites
@@ -85,11 +94,13 @@ Powered by **pnpm workspaces**, **Turborepo**, **Vite+** (VoidZero), **TanStack 
 pnpm install
 ```
 
-### 3. Generate Database Migrations
+### 3. Apply Database Migrations Locally
 
 ```bash
-pnpm db:generate
+pnpm db:migrate:local
 ```
+
+Both apps and this command share one local D1/KV/R2 state in `.wrangler/state/` at the repo root, so an account created on the storefront can sign in to the dashboard.
 
 ### 4. Start Local Development
 
@@ -102,27 +113,37 @@ pnpm dev:web         # Storefront at http://localhost:3000
 pnpm dev:dashboard   # Dashboard at http://localhost:3001
 ```
 
+### 5. Create Your First Admin
+
+Register on the storefront (`/register`), then promote the account. The dashboard only admits `role = 'admin'`:
+
+```bash
+pnpm --filter @repo/db exec wrangler d1 execute DB --local --persist-to ../../.wrangler/state \
+  --command "UPDATE user SET role='admin' WHERE email='you@example.com'"
+```
+
+For production, replace `--local --persist-to …` with `--remote`. After that, manage roles from the dashboard's `/users` page.
+
 > **Note on Local Storage Simulation**: The `@cloudflare/vite-plugin` automatically emulates Cloudflare D1, R2, and KV bindings locally using Miniflare during `pnpm dev`. You don't need active Cloudflare credentials to develop locally!
 
 ---
 
 ## 🛠️ CLI Commands Cheat Sheet
 
-| Task                    | Command                 | Description                                                                      |
-| :---------------------- | :---------------------- | :------------------------------------------------------------------------------- |
-| **Start Dev**           | `pnpm dev`              | Runs storefront (port 3000) and dashboard (port 3001) in parallel                |
-| **Format & Lint**       | `pnpm check`            | Runs Vite+ (`vp check`) across all apps & packages                               |
-| **Auto-Fix Code**       | `pnpm check:fix`        | Fixes formatting (Oxfmt) & lint rules (Oxlint)                                   |
-| **Staged Git Check**    | `vp staged`             | Automatically executed by Git pre-commit hook                                    |
-| **Type Check**          | `pnpm typecheck`        | Typechecks all packages via Turborepo                                            |
-| **Generate Migrations** | `pnpm db:generate`      | Creates SQL migration files in `packages/db` via Drizzle Kit                     |
-| **Sync Cloudflare IDs** | `pnpm cf:sync`          | Syncs D1, KV, R2 IDs from `.env` to all `wrangler.jsonc` files (apps & packages) |
-| **Apply DB Locally**    | `pnpm db:migrate:local` | Applies migrations to local D1 instance                                          |
-| **Apply DB to Prod**    | `pnpm db:migrate:prod`  | Applies migrations to remote Cloudflare D1                                       |
-| **Drizzle Studio**      | `pnpm db:studio`        | Launches GUI browser for database tables                                         |
-| **Build Apps**          | `pnpm build`            | Builds production bundles for storefront and dashboard                           |
-| **Deploy Storefront**   | `pnpm deploy:web`       | Deploys `apps/web` to Cloudflare Workers                                         |
-| **Deploy Dashboard**    | `pnpm deploy:dashboard` | Deploys `apps/dashboard` to Cloudflare Workers                                   |
+| Task                    | Command                 | Description                                                       |
+| :---------------------- | :---------------------- | :---------------------------------------------------------------- |
+| **Start Dev**           | `pnpm dev`              | Runs storefront (port 3000) and dashboard (port 3001) in parallel |
+| **Format & Lint**       | `pnpm check`            | Runs Vite+ (`vp check`) across all apps & packages                |
+| **Auto-Fix Code**       | `pnpm check:fix`        | Fixes formatting (Oxfmt) & lint rules (Oxlint)                    |
+| **Staged Git Check**    | `vp staged`             | Automatically executed by Git pre-commit hook                     |
+| **Type Check**          | `pnpm typecheck`        | Typechecks all packages via Turborepo                             |
+| **Generate Migrations** | `pnpm db:generate`      | Creates SQL migration files in `packages/db` via Drizzle Kit      |
+| **Apply DB Locally**    | `pnpm db:migrate:local` | Applies migrations to the shared local D1 in `.wrangler/state`    |
+| **Apply DB to Prod**    | `pnpm db:migrate:prod`  | Applies migrations to remote Cloudflare D1                        |
+| **Drizzle Studio**      | `pnpm db:studio`        | Launches GUI browser for database tables                          |
+| **Build Apps**          | `pnpm build`            | Builds production bundles for storefront and dashboard            |
+| **Deploy Storefront**   | `pnpm deploy:web`       | Deploys `apps/web` to Cloudflare Workers                          |
+| **Deploy Dashboard**    | `pnpm deploy:dashboard` | Deploys `apps/dashboard` to Cloudflare Workers                    |
 
 ---
 
@@ -141,13 +162,13 @@ pnpm dlx wrangler d1 create prod-db
 # 2. Create Cloudflare R2 Bucket
 pnpm dlx wrangler r2 bucket create prod-storage
 
-# 3. Create Cloudflare KV Namespace (for rate limiting & session cache)
+# 3. Create Cloudflare KV Namespace (rate limiting & dashboard settings)
 pnpm dlx wrangler kv namespace create KV
 ```
 
-### 2. Configure Cloudflare IDs Once & Sync
+### 2. Put Cloudflare IDs in `.env`, Never in `wrangler.jsonc`
 
-Instead of copying IDs into both `wrangler.jsonc` files manually, define them once in your root `.env`:
+The tracked `wrangler.jsonc` files hold only binding and resource **names**. Real IDs live in the gitignored root `.env` (or in CI environment variables):
 
 ```env
 D1_DATABASE_ID=<YOUR_D1_DATABASE_ID>
@@ -155,25 +176,25 @@ KV_NAMESPACE_ID=<YOUR_KV_NAMESPACE_ID>
 R2_BUCKET_NAME=prod-storage
 ```
 
-Then run the sync script to update both `apps/web/wrangler.jsonc` and `apps/dashboard/wrangler.jsonc` simultaneously:
-
-```bash
-pnpm cf:sync
-```
-
-_(For local development with `pnpm dev`, you do not even need real IDs—Miniflare automatically emulates all three locally with the default zeroed placeholder IDs!)_
+`vite build` injects them into the generated `dist/server/wrangler.json`, which `wrangler deploy` uses and git ignores. `pnpm db:migrate:prod` finds the D1 database by its `database_name`. Local dev needs no IDs at all.
 
 ### 3. Set Production Secrets
 
 ```bash
-# Better Auth secret (storefront)
+# Same BETTER_AUTH_SECRET on both workers (Better Auth refuses to start in production without one)
 pnpm dlx wrangler secret put BETTER_AUTH_SECRET --name storefront-web
+pnpm dlx wrangler secret put BETTER_AUTH_SECRET --name admin-dashboard
+
+# Each worker's own public URL, e.g. https://example.com and https://admin.example.com
+pnpm dlx wrangler secret put BETTER_AUTH_URL --name storefront-web
+pnpm dlx wrangler secret put BETTER_AUTH_URL --name admin-dashboard
 
 # Resend API Key (storefront)
 pnpm dlx wrangler secret put RESEND_API_KEY --name storefront-web
 
-# Better Auth secret (dashboard)
-pnpm dlx wrangler secret put BETTER_AUTH_SECRET --name admin-dashboard
+# Optional: share one session across example.com and admin.example.com
+pnpm dlx wrangler secret put AUTH_COOKIE_DOMAIN --name storefront-web   # e.g. example.com
+pnpm dlx wrangler secret put AUTH_COOKIE_DOMAIN --name admin-dashboard
 ```
 
 ### 4. Apply Migrations & Deploy
@@ -195,9 +216,11 @@ pnpm deploy:dashboard
 
 Better Auth is configured in `@repo/auth`:
 
-- **Server Handler**: Mounted via TanStack Start server handler in `apps/web/src/routes/api/auth.$.ts`.
-- **D1 Drizzle Adapter**: Reads and writes to the SQLite `user`, `session`, `account`, and `verification` tables.
-- **JWT Plugin**: Generates and verifies signed JSON Web Tokens for cross-subdomain or stateless service communication.
+- **Server Handler**: Each app mounts `auth.handler` in its own TanStack Start server route (`src/routes/api/auth.$.ts`). It's a plain `Request → Response` function, so no extra router (Hono, etc.) is needed. Sign-in, sign-up and password POSTs are rate-limited to 10 per IP per minute in KV.
+- **D1 Drizzle Adapter**: Reads and writes the `user`, `session`, `account`, `verification`, and `jwks` tables.
+- **Roles**: `user.role` defaults to `user` and can't be set by clients at sign-up. The dashboard requires `admin`, both in the route guard and in every server function (`adminOnly` middleware).
+- **JWT Plugin + Cookie Cache**: The session cache is a JWT cookie signed with the plugin's JWKS keys, so most session checks skip D1 for up to 5 minutes.
+- **Audit Log**: Sign-ups and sign-ins are written to `audit_logs` and shown on the dashboard overview.
 - **Client**: `apps/web/src/lib/auth-client.ts` and `apps/dashboard/src/lib/auth-client.ts` provide typed hooks (`signIn`, `signUp`, `signOut`, `useSession`, `authClient.token()`).
 
 ---
